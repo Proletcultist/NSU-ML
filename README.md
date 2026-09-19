@@ -1,6 +1,6 @@
 # ML NSU course repository
 
-Tasks for ML course of NSU
+Tasks for NSU ML course
 
 # Building requirements
 
