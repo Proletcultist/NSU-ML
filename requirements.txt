@@ -1,0 +1,2 @@
+matplotlib>=3.11.2
+pypst>=0.8.1

@@ -14,13 +14,15 @@
 )
 #let py = calepin.inline.with("python")
 
+// Imports and data reading
 ```python
 #| results: hide
 #| echo: false
 import csv
+import collections
 from matplotlib import pyplot as plt 
 
-with open('winequality-red.csv', newline='') as csvfile:
+with open('data.csv', newline='') as csvfile:
   csv_reader = csv.DictReader(csvfile, delimiter=',')
 
   data = list(csv_reader)
@@ -35,13 +37,15 @@ with open('winequality-red.csv', newline='') as csvfile:
 #| results: hide
 #| echo: false
 
-total_objects_amount = len(data)
+objects_classes_count = collections.Counter(row['quality'] for row in data)
 ```
 
 - Total objects amount: #py[`len(data)`]
 - Total features amount: #py[`len(fieldnames) - 1`] // Since one of the fields is class, 
                                                     // substract one
-// - Total classes amount: #py[`map()`]
+- Total classes amount: #py[`len(objects_classes_count)`]
+
+Classes: #py[`objects_classes_count`]
 
 #calepin.chunk()[
   ```python
