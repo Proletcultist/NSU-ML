@@ -25,7 +25,10 @@ import sigfig
 import itertools as itools
 from matplotlib import pyplot as plt 
 
+poor_quality_cutoff = 5
+mid_quality_cutoff = 7
 features = ['residual sugar', 'pH', 'alcohol','fixed acidity']
+
 data: pd.DataFrame = pd.read_csv('data.csv')
 
 def display_dataframe(df: pd.DataFrame, caption: str, include_index: bool = False):
@@ -104,9 +107,9 @@ def mscatter(x,y,ax=None, m=None, **kw):
 
 Let's transform dataset by:
   + Transforming quality feature:
-    - If $"quality" < 5$ the quality is "poor"
-    - If $5 <= "quality" < 7$ the quality is "mid"
-    - If $7 <= "quality"$ the quality is "great"
+    - If $"quality" < #py[`poor_quality_cutoff`]$ the quality is "poor"
+    - If $#py[`poor_quality_cutoff`] <= "quality" < #py[`mid_quality_cutoff`]$ the quality is "mid"
+    - If $#py[`mid_quality_cutoff`] <= "quality"$ the quality is "great"
   + Excluding all features except for:
     #calepin.chunk(
       echo: false,
@@ -126,9 +129,9 @@ Let's transform dataset by:
   data['quality'] = (
       data['quality']
       .map(lambda x: 
-        "poor" if x < 5 else
-        "mid" if x >= 5 and x < 7 else
-        "great" if x >= 7 else
+        "poor" if x < poor_quality_cutoff else
+        "mid" if x >= poor_quality_cutoff and x < mid_quality_cutoff else
+        "great" if x >= mid_quality_cutoff else
         None
       )
   )
