@@ -14,6 +14,7 @@ first: ${BUILD_DIR}/1.pdf ${SRC_DIR}/1/data.csv
 
 ${VENV_DIR}: ${REQUIREMENTS_FILE}
 	${PYTHON} -m venv ${VENV_DIR}
+	touch ${VENV_DIR} # Update timestamp
 	${VENV_DIR}/bin/python3 -m pip install -r ${REQUIREMENTS_FILE}
 
 ${BUILD_DIR}/%.pdf: ${SRC_DIR}/%/main.typ ${CALEPIN_CONFIG} ${VENV_DIR}

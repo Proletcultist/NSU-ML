@@ -2,7 +2,7 @@
 #show: calepin.document
 
 #set document(
-  title: [Лабораторная работа №1 \ Зенин Матвей 24214],
+  title: [Task №1: Wine quality dataset analysis \ Matvey Zenin 24214],
 )
 #set page(
   paper: "a4",
@@ -20,13 +20,11 @@
 #| echo: false
 import csv
 import collections
+import pandas as pd
+import pypst
 from matplotlib import pyplot as plt 
 
-with open('data.csv', newline='') as csvfile:
-  csv_reader = csv.DictReader(csvfile, delimiter=',')
-
-  data = list(csv_reader)
-  fieldnames = csv_reader.fieldnames
+data: pd.DataFrame = pd.read_csv('data.csv')
 ```
 
 #align(center, title())
@@ -37,18 +35,28 @@ with open('data.csv', newline='') as csvfile:
 #| results: hide
 #| echo: false
 
-objects_classes_count = collections.Counter(row['quality'] for row in data)
+objects_classes_by_classes_count = (
+    data
+    .groupby(['quality'])
+    .size()
+    .reset_index(name='Objects count')
+)
 ```
 
-- Total objects amount: #py[`len(data)`]
-- Total features amount: #py[`len(fieldnames) - 1`] // Since one of the fields is class, 
-                                                    // substract one
-- Total classes amount: #py[`len(objects_classes_count)`]
+- Total objects amount: #py[`len(data.index)`]
+- Total features amount: #py[`len(data.columns) - 1`] // Since one of the fields is class, 
+                                                      // substract one
+- Total classes amount: #py[`len(objects_classes_by_classes_count.index)`]
+- Distribution of objects into classes:
 
-Classes: #py[`objects_classes_count`]
-
-#calepin.chunk()[
+#calepin.chunk(
+  echo: false,
+  results: "typst",
+)[
   ```python
-  print(data[0])
+  table = pypst.Table.from_dataframe(objects_classes_by_classes_count, include_index = False)
+  figure = pypst.Figure(table, caption='[Objects count by classes]')
+
+  print(figure.render())
   ```
 ]
