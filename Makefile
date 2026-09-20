@@ -10,7 +10,9 @@ VENV_DIR = .venv
 BUILD_DIR = build
 
 all: first
-first: ${BUILD_DIR}/1.pdf ${SRC_DIR}/1/data.csv
+first: ${BUILD_DIR}/1.pdf
+
+${BUILD_DIR}/1.pdf: ${SRC_DIR}/1/data.csv
 
 ${VENV_DIR}: ${REQUIREMENTS_FILE}
 	${PYTHON} -m venv ${VENV_DIR}
