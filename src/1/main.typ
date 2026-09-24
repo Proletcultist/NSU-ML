@@ -23,11 +23,26 @@ import pandas as pd
 import pypst
 import sigfig
 import itertools as itools
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+from sklearn.inspection import DecisionBoundaryDisplay
+import matplotlib as mpl
 from matplotlib import pyplot as plt 
 
+lda_classes = ['great', 'poor']
 poor_quality_cutoff = 5
 mid_quality_cutoff = 7
-features = ['residual sugar', 'pH', 'alcohol','fixed acidity']
+features = ['residual sugar', 'pH', 'alcohol', 'fixed acidity']
+
+class_to_color_map = {
+    'great': (0.0, 0.8, 0.0),
+    'mid': (0.8, 0.8, 0.0),
+    'poor': (0.8, 0.0, 0.0),
+}
+class_to_marker_map = {
+    'great': '*',
+    'mid': '.',
+    'poor': 'X',
+}
 
 data: pd.DataFrame = pd.read_csv('data.csv')
 
@@ -167,17 +182,6 @@ Let's transform dataset by:
   fig-layout-columns: (1fr),
 )[
   ```python
-  class_to_color_map = {
-      'great': (0.0, 0.8, 0.0),
-      'mid': (0.8, 0.8, 0.0),
-      'poor': (0.8, 0.0, 0.0),
-  }
-  class_to_marker_map = {
-      'great': '*',
-      'mid': '.',
-      'poor': 'X',
-  }
-
   colors = list(map(
       lambda cls: class_to_color_map[cls],
       data['quality']
@@ -267,5 +271,48 @@ Let's transform dataset by:
       caption="[Feature correlations by groups]",
       include_index=True,
   )
+  ```
+]
+
+= LDA
+
+For classification of objects with LDA let's filter out all classes except for two:
+    #calepin.chunk(
+      echo: false,
+      results: "typst",
+    )[
+      ```python
+      print(pypst.Itemize(lda_classes).render())
+      ```
+    ]
+
+#calepin.chunk(
+  echo: false,
+  results: "typst",
+  label: "fig-lda",
+  fig-caption: [LDA for every pair of features],
+  fig-layout-columns: (1fr),
+)[
+  ```python
+  data = data[data['quality'].map(lambda q: q in lda_classes)]
+
+  y = data['quality']
+  colors = y.map(lambda q: class_to_color_map[q])
+  markers = y.map(lambda q: class_to_marker_map[q])
+
+  for fst, snd in itools.combinations(features, 2):
+      X = data[[fst, snd]]
+      clf = LinearDiscriminantAnalysis()
+      clf.fit(X, y)
+
+      disp = DecisionBoundaryDisplay.from_estimator(
+        clf, X, response_method="predict",
+        xlabel=fst, ylabel=snd,
+        alpha=0.5,
+        colors=colors,
+      )
+      mscatter(X[fst], X[snd], ax=disp.ax_,  c=colors, m=markers, edgecolor="k")
+
+      plt.plot()
   ```
 ]
