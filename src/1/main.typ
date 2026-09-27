@@ -34,7 +34,7 @@ features = ['residual sugar', 'pH', 'alcohol', 'fixed acidity']
 mid_quality_cutoff = 7
 poor_quality_cutoff = 5
 lda_classes = ['great', 'poor']
-linear_regression_features = {'pH', 'alcohol'}
+linear_regression_features = ('pH', 'alcohol')
 
 class_to_color_map = {
     'great': (0.0, 0.8, 0.0),
@@ -307,12 +307,6 @@ For classification of objects with LDA let's filter out all classes except for t
       X = data[[fst, snd]]
       clf = LinearDiscriminantAnalysis().fit(X, y)
 
-      if {fst, snd} == linear_regression_features:
-          lr_clf = clf
-          lr_X = X
-          lr_fst = fst
-          lr_snd = snd
-
       disp = DecisionBoundaryDisplay.from_estimator(
           clf, X, response_method="predict",
           xlabel=fst, ylabel=snd,
@@ -337,20 +331,24 @@ For classification of objects with LDA let's filter out all classes except for t
   ```python
   fig, ax = plt.subplots()
 
+  X = data[[linear_regression_features[0], linear_regression_features[1]]]
+  y = data['quality']
+  clf = LinearDiscriminantAnalysis().fit(X, y)
+
   disp = DecisionBoundaryDisplay.from_estimator(
-      lr_clf, lr_X, response_method="predict",
-      xlabel=lr_fst, ylabel=lr_snd,
+      clf, X, response_method="predict",
+      xlabel=linear_regression_features[0], ylabel=linear_regression_features[1],
       alpha=0.5,
-      colors=colors,
       ax=ax,
+      colors=colors,
       grid_resolution=256,
   )
-  mscatter(lr_X[lr_fst], lr_X[lr_snd], ax=ax,  c=colors, m=markers, edgecolor="k")
+  mscatter(X[linear_regression_features[0]], X[linear_regression_features[1]], ax=ax,  c=colors, m=markers, edgecolor="k")
 
-  lr = LinearRegression().fit(lr_X[[lr_fst]], lr_X[lr_snd])
+  lr = LinearRegression().fit(X[[linear_regression_features[0]]], X[linear_regression_features[1]])
   left, right = ax.get_xlim()
   x = pd.DataFrame({
-      lr_fst: np.linspace(left, right, num=256)
+      linear_regression_features[0]: np.linspace(left, right, num=256)
   })
   y = lr.predict(x)
   ax.plot(x, y, color=(0.0, 0.0, 0.0))
