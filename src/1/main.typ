@@ -19,19 +19,22 @@
 ```python
 #| results: hide
 #| echo: false
+import numpy as np
 import pandas as pd
 import pypst
 import sigfig
 import itertools as itools
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.inspection import DecisionBoundaryDisplay
+from sklearn.linear_model import LinearRegression
 import matplotlib as mpl
 from matplotlib import pyplot as plt 
 
-lda_classes = ['great', 'poor']
-poor_quality_cutoff = 5
-mid_quality_cutoff = 7
 features = ['residual sugar', 'pH', 'alcohol', 'fixed acidity']
+mid_quality_cutoff = 7
+poor_quality_cutoff = 5
+lda_classes = ['great', 'poor']
+linear_regression_features = {'pH', 'alcohol'}
 
 class_to_color_map = {
     'great': (0.0, 0.8, 0.0),
@@ -288,7 +291,7 @@ For classification of objects with LDA let's filter out all classes except for t
 
 #calepin.chunk(
   echo: false,
-  results: "typst",
+  results: "auto",
   label: "fig-lda",
   fig-caption: [LDA for every pair of features],
   fig-layout-columns: (1fr),
@@ -302,17 +305,56 @@ For classification of objects with LDA let's filter out all classes except for t
 
   for fst, snd in itools.combinations(features, 2):
       X = data[[fst, snd]]
-      clf = LinearDiscriminantAnalysis()
-      clf.fit(X, y)
+      clf = LinearDiscriminantAnalysis().fit(X, y)
+
+      if {fst, snd} == linear_regression_features:
+          lr_clf = clf
+          lr_X = X
+          lr_fst = fst
+          lr_snd = snd
 
       disp = DecisionBoundaryDisplay.from_estimator(
-        clf, X, response_method="predict",
-        xlabel=fst, ylabel=snd,
-        alpha=0.5,
-        colors=colors,
+          clf, X, response_method="predict",
+          xlabel=fst, ylabel=snd,
+          alpha=0.5,
+          colors=colors,
+          grid_resolution=256,
       )
       mscatter(X[fst], X[snd], ax=disp.ax_,  c=colors, m=markers, edgecolor="k")
 
-      plt.plot()
+      plt.show()
+  ```
+]
+
+= Linear regression + LDA
+
+#calepin.chunk(
+  echo: false,
+  results: "auto",
+  label: "fig-lr-lda",
+  fig-caption: [Linear regression + LDA],
+)[
+  ```python
+  fig, ax = plt.subplots()
+
+  disp = DecisionBoundaryDisplay.from_estimator(
+      lr_clf, lr_X, response_method="predict",
+      xlabel=lr_fst, ylabel=lr_snd,
+      alpha=0.5,
+      colors=colors,
+      ax=ax,
+      grid_resolution=256,
+  )
+  mscatter(lr_X[lr_fst], lr_X[lr_snd], ax=ax,  c=colors, m=markers, edgecolor="k")
+
+  lr = LinearRegression().fit(lr_X[[lr_fst]], lr_X[lr_snd])
+  left, right = ax.get_xlim()
+  x = pd.DataFrame({
+      lr_fst: np.linspace(left, right, num=256)
+  })
+  y = lr.predict(x)
+  ax.plot(x, y, color=(0.0, 0.0, 0.0))
+
+  plt.show()
   ```
 ]
