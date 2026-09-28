@@ -36,6 +36,7 @@
   from sklearn.naive_bayes import GaussianNB
   from sklearn.metrics import confusion_matrix, auc, roc_curve, RocCurveDisplay
   from sklearn.calibration import CalibratedClassifierCV
+  from sklearn.model_selection import train_test_split
   import matplotlib as mpl
   from matplotlib import pyplot as plt 
 
@@ -405,10 +406,13 @@ comp_data = data[data['quality'].map(lambda q: q in classifiers_comparison_class
 
 X = comp_data[[classifiers_comparison_features[0], classifiers_comparison_features[1]]]
 y = comp_data['quality']
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
+
 colors = y.map(lambda q: class_to_color_map[q])
 markers = y.map(lambda q: class_to_marker_map[q])
 
-def display_classifier(clf, X, y, colors, markers):
+def display_classifier(clf, X, colors, markers):
     disp = DecisionBoundaryDisplay.from_estimator(
         clf, X, response_method="predict",
         xlabel=classifiers_comparison_features[0], ylabel=classifiers_comparison_features[1],
@@ -419,14 +423,14 @@ def display_classifier(clf, X, y, colors, markers):
     mscatter(X[classifiers_comparison_features[0]], X[classifiers_comparison_features[1]], ax=disp.ax_,  c=colors, m=markers, edgecolor="k")
     plt.show()
 
-def display_classifier_metrics(clf, target_class, X, y, clf_name):
+def display_classifier_metrics(clf, target_class, X_test, y_test, clf_name):
     class_mapper = lambda cl: cl if cl == target_class else 'not ' + target_class
 
-    y = list(map(class_mapper, y))
-    y_pred = list(map(class_mapper, clf.predict(X)))
+    y_test = list(map(class_mapper, y_test))
+    y_pred = list(map(class_mapper, clf.predict(X_test)))
 
     tp, fn, fp, tn = confusion_matrix(
-        y, y_pred, 
+        y_test, y_pred, 
         labels=[target_class, 'not ' + target_class],
     ).ravel().tolist()
 
@@ -450,8 +454,8 @@ def display_classifier_metrics(clf, target_class, X, y, clf_name):
     ]).render())
 
     fpr, tpr, thresholds = roc_curve(
-      y,
-      clf.predict_proba(X)[:, np.where(clf.classes_ == target_class)[0]], 
+      y_test,
+      clf.predict_proba(X_test)[:, np.where(clf.classes_ == target_class)[0]], 
       pos_label=target_class,
     )
     roc_auc = auc(fpr, tpr)
@@ -473,8 +477,8 @@ def display_classifier_metrics(clf, target_class, X, y, clf_name):
   fig-layout-columns: (1fr),
 )[
   ```python
-  clf = LinearDiscriminantAnalysis().fit(X, y)
-  display_classifier(clf, X, y, colors, markers)
+  clf = LinearDiscriminantAnalysis().fit(X_train, y_train)
+  display_classifier(clf, X, colors, markers)
   ```
 ]
 
@@ -482,7 +486,7 @@ def display_classifier_metrics(clf, target_class, X, y, clf_name):
   results: "typst",
 )[
   ```python
-  display_classifier_metrics(clf, classifiers_comparison_target_class, X, y, "LDA")
+  display_classifier_metrics(clf, classifiers_comparison_target_class, X_test, y_test, "LDA")
   ```
 ]
 
@@ -495,8 +499,8 @@ def display_classifier_metrics(clf, target_class, X, y, clf_name):
   fig-layout-columns: (1fr),
 )[
   ```python
-  clf = make_pipeline(StandardScaler(), CalibratedClassifierCV(SVC(gamma='auto'), ensemble=False)).fit(X, y)
-  display_classifier(clf, X, y, colors, markers)
+  clf = make_pipeline(StandardScaler(), CalibratedClassifierCV(SVC(gamma='auto'), ensemble=False)).fit(X_train, y_train)
+  display_classifier(clf, X, colors, markers)
   ```
 ]
 
@@ -504,7 +508,7 @@ def display_classifier_metrics(clf, target_class, X, y, clf_name):
   results: "typst",
 )[
   ```python
-  display_classifier_metrics(clf, classifiers_comparison_target_class, X, y, "SVM")
+  display_classifier_metrics(clf, classifiers_comparison_target_class, X_test, y_test, "SVM")
   ```
 ]
 
@@ -517,8 +521,8 @@ def display_classifier_metrics(clf, target_class, X, y, clf_name):
   fig-layout-columns: (1fr),
 )[
   ```python
-  clf = LogisticRegression().fit(X, y)
-  display_classifier(clf, X, y, colors, markers)
+  clf = LogisticRegression().fit(X_train, y_train)
+  display_classifier(clf, X, colors, markers)
   ```
 ]
 
@@ -526,7 +530,7 @@ def display_classifier_metrics(clf, target_class, X, y, clf_name):
   results: "typst",
 )[
   ```python
-  display_classifier_metrics(clf, classifiers_comparison_target_class, X, y, "Logistic regression")
+  display_classifier_metrics(clf, classifiers_comparison_target_class, X_test, y_test, "Logistic regression")
   ```
 ]
 
@@ -539,8 +543,8 @@ def display_classifier_metrics(clf, target_class, X, y, clf_name):
   fig-layout-columns: (1fr),
 )[
   ```python
-  clf = GaussianNB().fit(X, y)
-  display_classifier(clf, X, y, colors, markers)
+  clf = GaussianNB().fit(X_train, y_train)
+  display_classifier(clf, X, colors, markers)
   ```
 ]
 
@@ -548,6 +552,6 @@ def display_classifier_metrics(clf, target_class, X, y, clf_name):
   results: "typst",
 )[
   ```python
-  display_classifier_metrics(clf, classifiers_comparison_target_class, X, y, "Naive Bayes classifier")
+  display_classifier_metrics(clf, classifiers_comparison_target_class, X_test, y_test, "Naive Bayes classifier")
   ```
 ]
