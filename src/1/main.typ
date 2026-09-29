@@ -12,7 +12,7 @@
   font: "New Computer Modern",
   size: 12pt,
 )
-#calepin.setup(echo: false)
+#calepin.setup(echo: true)
 
 #show figure: set block(breakable: true)
 #let py = calepin.inline.with("python")
@@ -49,6 +49,7 @@
   classifiers_comparison_classes = ['great', 'poor']
   classifiers_comparison_features = ('pH', 'alcohol')
   classifiers_comparison_target_class = 'great'
+  classifiers_comparison_target_test_size = 0.25
 
   class_to_color_map = {
       'great': (0.0, 0.8, 0.0),
@@ -407,7 +408,10 @@ comp_data = data[data['quality'].map(lambda q: q in classifiers_comparison_class
 X = comp_data[[classifiers_comparison_features[0], classifiers_comparison_features[1]]]
 y = comp_data['quality']
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, random_state=0,
+    test_size=classifiers_comparison_target_test_size,
+)
 
 colors = y.map(lambda q: class_to_color_map[q])
 markers = y.map(lambda q: class_to_marker_map[q])
