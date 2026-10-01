@@ -6,7 +6,7 @@
 )
 #set page(
   paper: "a4",
-  numbering: "1",
+  numbering: none,
 )
 #set text(
   font: "New Computer Modern",
@@ -16,6 +16,8 @@
 
 #show figure: set block(breakable: true)
 #let py = calepin.inline.with("python")
+
+#align(center, title())
 
 // Imports, settings and data reading
 #calepin.chunk(
@@ -91,8 +93,6 @@
       return sc
   ```
 ]
-
-#align(center, title())
 
 = Dataset content
 
@@ -199,7 +199,7 @@ Let's transform dataset by:
   results: "auto",
   label: "fig-feature-relation",
   fig-caption: [Feature relations],
-  fig-layout-columns: (1fr),
+  fig-layout-columns: (1fr, 1fr),
 )[
   ```python
   colors = list(map(
@@ -229,7 +229,7 @@ Let's transform dataset by:
   results: "auto",
   label: "fig-features-hist",
   fig-caption: [Objects count by feature values],
-  fig-layout-columns: (1fr),
+  fig-layout-columns: (1fr, 1fr),
 )[
   ```python
   for feat in features:
@@ -307,7 +307,7 @@ For classification of objects with LDA let's filter out all classes except for:
   results: "auto",
   label: "fig-lda",
   fig-caption: [LDA for every pair of features],
-  fig-layout-columns: (1fr),
+  fig-layout-columns: (1fr, 1fr),
 )[
   ```python
   lda_data = data[data['quality'].map(lambda q: q in lda_classes)]
@@ -457,6 +457,7 @@ def display_classifier_metrics(clf, target_class, X_test, y_test, clf_name):
       f"Recall: {sigfig.round(tp / (tp + fn), sigfigs=4, warn=False)}",
     ]).render())
 
+def display_classifier_roc_auc(clf, target_class, X_test, y_test, clf_name):
     fpr, tpr, thresholds = roc_curve(
       y_test,
       clf.predict_proba(X_test)[:, np.where(clf.classes_ == target_class)[0]], 
@@ -470,6 +471,7 @@ def display_classifier_metrics(clf, target_class, X_test, y_test, clf_name):
     display.plot()
 
     plt.show()
+
 ```
 
 == LDA
@@ -478,11 +480,13 @@ def display_classifier_metrics(clf, target_class, X_test, y_test, clf_name):
   results: "auto",
   label: "fig-lr-lda2",
   fig-caption: [LDA],
-  fig-layout-columns: (1fr),
+  fig-layout-columns: (1fr, 1fr),
 )[
   ```python
   clf = LinearDiscriminantAnalysis().fit(X_train, y_train)
+
   display_classifier(clf, X, colors, markers)
+  display_classifier_roc_auc(clf, classifiers_comparison_target_class, X_test, y_test, "LDA")
   ```
 ]
 
@@ -500,11 +504,13 @@ def display_classifier_metrics(clf, target_class, X_test, y_test, clf_name):
   results: "auto",
   label: "fig-lr-svm",
   fig-caption: [SVM],
-  fig-layout-columns: (1fr),
+  fig-layout-columns: (1fr, 1fr),
 )[
   ```python
   clf = make_pipeline(StandardScaler(), CalibratedClassifierCV(SVC(gamma='auto'), ensemble=False)).fit(X_train, y_train)
+
   display_classifier(clf, X, colors, markers)
+  display_classifier_roc_auc(clf, classifiers_comparison_target_class, X_test, y_test, "SVM")
   ```
 ]
 
@@ -522,11 +528,13 @@ def display_classifier_metrics(clf, target_class, X_test, y_test, clf_name):
   results: "auto",
   label: "fig-lr-log",
   fig-caption: [Logistic regression],
-  fig-layout-columns: (1fr),
+  fig-layout-columns: (1fr, 1fr),
 )[
   ```python
   clf = LogisticRegression().fit(X_train, y_train)
+
   display_classifier(clf, X, colors, markers)
+  display_classifier_roc_auc(clf, classifiers_comparison_target_class, X_test, y_test, "Logistic regression")
   ```
 ]
 
@@ -544,11 +552,13 @@ def display_classifier_metrics(clf, target_class, X_test, y_test, clf_name):
   results: "auto",
   label: "fig-lr-bayes",
   fig-caption: [Naive Bayes classifier],
-  fig-layout-columns: (1fr),
+  fig-layout-columns: (1fr, 1fr),
 )[
   ```python
   clf = GaussianNB().fit(X_train, y_train)
+
   display_classifier(clf, X, colors, markers)
+  display_classifier_roc_auc(clf, classifiers_comparison_target_class, X_test, y_test, "Naive Bayes classifier")
   ```
 ]
 
