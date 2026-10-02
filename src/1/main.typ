@@ -53,9 +53,9 @@
   classifiers_comparison_target_test_size = 0.25
 
   class_to_color_map = {
-      '7': (0.0, 0.8, 0.0),
-      '6': (0.8, 0.8, 0.0),
-      '5': (0.8, 0.0, 0.0),
+      '7': (0.0, 0.8, 0.0, 0.75),
+      '6': (0.8, 0.8, 0.0, 0.75),
+      '5': (0.8, 0.0, 0.0, 0.75),
   }
   class_to_marker_map = {
       '7': '*',
@@ -212,6 +212,8 @@ Let's transform dataset by:
       y = data[snd]
 
       fig, ax = plt.subplots()
+      ax.set_axisbelow(True)
+      plt.grid()
       mscatter(x, y, c=colors, m=markers, ax = ax)
 
       plt.xlabel(fst)
@@ -316,15 +318,20 @@ For classification of objects with LDA let's filter out all classes except for:
       X = lda_data[[fst, snd]]
       clf = LinearDiscriminantAnalysis().fit(X, y)
 
+      fig, ax = plt.subplots()
+      ax.set_axisbelow(True)
+      plt.grid()
+
       disp = DecisionBoundaryDisplay.from_estimator(
           clf, X, response_method="predict",
           eps=0.05,
+          ax=ax,
           xlabel=fst, ylabel=snd,
           alpha=0.5,
           colors=colors,
           grid_resolution=256,
       )
-      mscatter(X[fst], X[snd], ax=disp.ax_,  c=colors, m=markers, edgecolor="k")
+      mscatter(X[fst], X[snd], ax=ax,  c=colors, m=markers, edgecolor="k")
 
       plt.show()
   ```
@@ -339,6 +346,8 @@ For classification of objects with LDA let's filter out all classes except for:
 )[
   ```python
   fig, ax = plt.subplots()
+  ax.set_axisbelow(True)
+  plt.grid()
 
   X = lda_data[[linear_regression_features[0], linear_regression_features[1]]]
   y = lda_data['quality']
@@ -415,15 +424,20 @@ colors = y.map(lambda q: class_to_color_map[q])
 markers = y.map(lambda q: class_to_marker_map[q])
 
 def display_classifier(clf, X, colors, markers):
+    fig, ax = plt.subplots()
+    ax.set_axisbelow(True)
+    plt.grid()
+
     disp = DecisionBoundaryDisplay.from_estimator(
         clf, X, response_method="predict",
         xlabel=classifiers_comparison_features[0], ylabel=classifiers_comparison_features[1],
+        ax=ax,
         eps=0.2,
         alpha=0.5,
         colors=colors,
         grid_resolution=256,
     )
-    mscatter(X[classifiers_comparison_features[0]], X[classifiers_comparison_features[1]], ax=disp.ax_,  c=colors, m=markers, edgecolor="k")
+    mscatter(X[classifiers_comparison_features[0]], X[classifiers_comparison_features[1]], ax=ax,  c=colors, m=markers, edgecolor="k")
 
     plt.show()
 
@@ -498,6 +512,8 @@ def display_classifier_roc_auc(clf, target_class, X_test, y_test, clf_name):
   ```
 ]
 
+#pagebreak()
+
 == SVM
 
 #calepin.chunk(
@@ -522,6 +538,8 @@ def display_classifier_roc_auc(clf, target_class, X_test, y_test, clf_name):
   ```
 ]
 
+#pagebreak()
+
 == Logistic regression
 
 #calepin.chunk(
@@ -545,6 +563,8 @@ def display_classifier_roc_auc(clf, target_class, X_test, y_test, clf_name):
   display_classifier_metrics(clf, classifiers_comparison_target_class, X_test, y_test, "Logistic regression")
   ```
 ]
+
+#pagebreak()
 
 == Naive Bayes classifier
 
