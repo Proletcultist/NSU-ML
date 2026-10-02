@@ -43,29 +43,28 @@
   from matplotlib import pyplot as plt 
 
   # Settings
-  features = ['residual sugar', 'pH', 'alcohol', 'fixed acidity']
-  poor_quality_cutoff = 5
-  mid_quality_cutoff = 7
-  lda_classes = ['great', 'poor']
-  linear_regression_features = ('pH', 'alcohol')
-  classifiers_comparison_classes = ['great', 'poor']
-  classifiers_comparison_features = ('pH', 'alcohol')
-  classifiers_comparison_target_class = 'great'
+  features = ['sulphates', 'chlorides', 'alcohol', 'volatile acidity']
+  classes = ['5', '6', '7']
+  lda_classes = ['5', '7']
+  linear_regression_features = ('sulphates', 'volatile acidity')
+  classifiers_comparison_classes = ['5', '7']
+  classifiers_comparison_features = ('volatile acidity', 'alcohol')
+  classifiers_comparison_target_class = '7'
   classifiers_comparison_target_test_size = 0.25
 
   class_to_color_map = {
-      'great': (0.0, 0.8, 0.0),
-      'mid': (0.8, 0.8, 0.0),
-      'poor': (0.8, 0.0, 0.0),
+      '7': (0.0, 0.8, 0.0),
+      '6': (0.8, 0.8, 0.0),
+      '5': (0.8, 0.0, 0.0),
   }
   class_to_marker_map = {
-      'great': '*',
-      'mid': '.',
-      'poor': 'X',
+      '7': '*',
+      '6': '.',
+      '5': 'X',
   }
 
   # Reading the data
-  data: pd.DataFrame = pd.read_csv('data.csv')
+  data: pd.DataFrame = pd.read_csv('data.csv', dtype={'quality': str})
 
   # Display DataFrame as typst table in figure
   def display_dataframe(df: pd.DataFrame, caption: str, include_index: bool = False):
@@ -143,10 +142,15 @@
 = Dataset filtering
 
 Let's transform dataset by:
-  + Transforming quality feature:
-    - If $"quality" < #py[`poor_quality_cutoff`]$ the quality is "poor"
-    - If $#py[`poor_quality_cutoff`] <= "quality" < #py[`mid_quality_cutoff`]$ the quality is "mid"
-    - If $#py[`mid_quality_cutoff`] <= "quality"$ the quality is "great"
+  + Exclude all wines with quality not from following list:
+    #calepin.chunk(
+      results: "typst",
+      echo: false,
+    )[
+      ```python
+      print(pypst.Itemize(features).render())
+      ```
+    ]
   + Excluding all features except for:
     #calepin.chunk(
       results: "typst",
@@ -162,15 +166,6 @@ Let's transform dataset by:
   results: "typst",
 )[
   ```python
-  data['quality'] = (
-      data['quality']
-      .map(lambda x: 
-        "poor" if x < poor_quality_cutoff else
-        "mid" if x >= poor_quality_cutoff and x < mid_quality_cutoff else
-        "great" if x >= mid_quality_cutoff else
-        None
-      )
-  )
   data.drop(
       filter(
           lambda c: c not in ['quality'] + features, 
@@ -179,6 +174,7 @@ Let's transform dataset by:
       axis='columns',
       inplace=True,
   )
+  data = data[data['quality'].map(lambda q: q in classes)]
   data.dropna(inplace=True)
 
   dataset_content_info, objects_count_by_classes = get_dataset_content_info()
@@ -322,6 +318,7 @@ For classification of objects with LDA let's filter out all classes except for:
 
       disp = DecisionBoundaryDisplay.from_estimator(
           clf, X, response_method="predict",
+          eps=0.05,
           xlabel=fst, ylabel=snd,
           alpha=0.5,
           colors=colors,
@@ -353,6 +350,7 @@ For classification of objects with LDA let's filter out all classes except for:
   disp = DecisionBoundaryDisplay.from_estimator(
       clf, X, response_method="predict",
       xlabel=linear_regression_features[0], ylabel=linear_regression_features[1],
+      eps=0.2,
       alpha=0.5,
       ax=ax,
       colors=colors,
@@ -420,11 +418,13 @@ def display_classifier(clf, X, colors, markers):
     disp = DecisionBoundaryDisplay.from_estimator(
         clf, X, response_method="predict",
         xlabel=classifiers_comparison_features[0], ylabel=classifiers_comparison_features[1],
+        eps=0.2,
         alpha=0.5,
         colors=colors,
         grid_resolution=256,
     )
     mscatter(X[classifiers_comparison_features[0]], X[classifiers_comparison_features[1]], ax=disp.ax_,  c=colors, m=markers, edgecolor="k")
+
     plt.show()
 
 def display_classifier_metrics(clf, target_class, X_test, y_test, clf_name):
