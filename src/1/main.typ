@@ -232,8 +232,11 @@ Let's transform dataset by:
   ```python
   for feat in features:
       fig, ax = plt.subplots()
+      ax.set_axisbelow(True)
+      plt.grid()
 
-      ax.hist(data[feat], bins=20)
+      for cls in classes:
+          ax.hist(data[data['quality'] == cls][feat], bins=20, color=class_to_color_map[cls])
 
       plt.xlabel(feat)
       plt.ylabel('Objects count')
