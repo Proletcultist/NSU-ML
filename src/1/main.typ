@@ -330,11 +330,11 @@ For classification of objects with LDA let's filter out all classes except for:
           eps=0.05,
           ax=ax,
           xlabel=fst, ylabel=snd,
-          alpha=0.5,
+          alpha=0.2,
           colors=colors,
           grid_resolution=256,
       )
-      mscatter(X[fst], X[snd], ax=ax,  c=colors, m=markers, edgecolor="k")
+      mscatter(X[fst], X[snd], ax=ax,  c=colors, m=markers)
 
       plt.show()
   ```
@@ -363,12 +363,12 @@ For classification of objects with LDA let's filter out all classes except for:
       clf, X, response_method="predict",
       xlabel=linear_regression_features[0], ylabel=linear_regression_features[1],
       eps=0.2,
-      alpha=0.5,
+      alpha=0.2,
       ax=ax,
       colors=colors,
       grid_resolution=256,
   )
-  mscatter(X[linear_regression_features[0]], X[linear_regression_features[1]], ax=ax,  c=colors, m=markers, edgecolor="k")
+  mscatter(X[linear_regression_features[0]], X[linear_regression_features[1]], ax=ax,  c=colors, m=markers)
 
   lr = LinearRegression().fit(X[[linear_regression_features[0]]], X[linear_regression_features[1]])
   left, right = ax.get_xlim()
@@ -436,11 +436,11 @@ def display_classifier(clf, X, colors, markers):
         xlabel=classifiers_comparison_features[0], ylabel=classifiers_comparison_features[1],
         ax=ax,
         eps=0.2,
-        alpha=0.5,
+        alpha=0.2,
         colors=colors,
         grid_resolution=256,
     )
-    mscatter(X[classifiers_comparison_features[0]], X[classifiers_comparison_features[1]], ax=ax,  c=colors, m=markers, edgecolor="k")
+    mscatter(X[classifiers_comparison_features[0]], X[classifiers_comparison_features[1]], ax=ax,  c=colors, m=markers)
 
     plt.show()
 
