@@ -14,7 +14,6 @@
 )
 #calepin.setup(echo: true)
 
-#show figure: set block(breakable: true)
 #let py = calepin.inline.with("python")
 
 #align(center, title())
@@ -25,6 +24,10 @@
   label: "imports",
 )[
   ```python
+  from sklearn.svm import LinearSVC
+  from matplotlib.colors import ListedColormap
+  from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+  from sklearn.inspection import DecisionBoundaryDisplay
   from sklearn.datasets import make_blobs
   import pypst
   import sigfig
@@ -38,17 +41,21 @@
   random_state = 1
   feature_names = ['f0', 'f1', 'f2', 'f3']
   class_label = 'label'
-  class_to_multiply = 0
+
+  class_to_multiply = 2
+  secondary_class = 0
+
+  lda_features = ('f0', 'f1')
 
   class_to_color_map = {
-      0: (0.0, 0.8, 0.0, 0.75),
+      2: (0.0, 0.8, 0.0, 0.75),
       1: (0.8, 0.8, 0.0, 0.75),
-      2: (0.8, 0.0, 0.0, 0.75),
+      0: (0.8, 0.0, 0.0, 0.75),
   }
   class_to_marker_map = {
-      0: '*',
+      2: '*',
       1: '.',
-      2: 'X',
+      0: 'X',
   }
 
   df1_X, df1_y = make_blobs(
@@ -221,5 +228,147 @@
       caption="[Feature correlations by groups]",
       include_index=True,
   )
+  ```
+]
+
+= LDA/SVM
+
+For classification of objects with LDA/SVM let's filter out all classes except for:
+    #calepin.chunk(
+      results: "typst",
+      label: "lda-svm-classes-list",
+      echo: false,
+    )[
+      ```python
+      print(pypst.Itemize([str(class_to_multiply), str(secondary_class)]).render())
+      ```
+    ]
+And all features except for:
+    #calepin.chunk(
+      results: "typst",
+      label: "lda-svm-features-list",
+      echo: false,
+    )[
+      ```python
+      print(pypst.Itemize(list(lda_features)).render())
+      ```
+    ]
+
+#calepin.chunk(
+  results: "hide",
+  label: "lda-svm-filtering",
+)[
+  ```python
+  for k, v in dfs.items():
+    v.drop(
+      filter(
+        lambda c: c != class_label and c not in lda_features,
+        v.columns,
+      ),
+      axis='columns',
+      inplace=True,
+    )
+
+    dfs[k] = v[v[class_label].map(lambda c: c == class_to_multiply or c == secondary_class)]
+  ```
+]
+
+#calepin.chunk(
+  results: "auto",
+  label: "fig-lda",
+  fig-caption: [LDA],
+  fig-layout-columns: (1fr, 1fr),
+  fig-subcaptions: (
+    [df1],
+    [df2],
+    [df5],
+    [df10],
+    [df20],
+    [df50],
+    [df100],
+    [df1000],
+    [df10k],
+  ),
+)[
+  ```python
+  X_df1 = dfs[1][list(lda_features)]
+  y_df1 = dfs[1][class_label]
+  colors = y_df1.map(lambda q: class_to_color_map[q])
+  markers = y_df1.map(lambda q: class_to_marker_map[q])
+
+  lda_clfs = {}
+
+  for k,df in dfs.items():
+    X = df[list(lda_features)]
+    y = df[class_label]
+
+    lda_clfs[k] = LinearDiscriminantAnalysis().fit(X, y)
+
+    cmap = ListedColormap([class_to_color_map[c] for c in lda_clfs[k].classes_])
+    fig, ax = plt.subplots()
+    ax.set_axisbelow(True)
+    plt.grid()
+
+    DecisionBoundaryDisplay.from_estimator(
+        lda_clfs[k], X, response_method="predict",
+        eps=1.0,
+        ax=ax,
+        xlabel=lda_features[0], ylabel=lda_features[1],
+        alpha=0.2,
+        cmap=cmap,
+        grid_resolution=256,
+    )
+    mscatter(X_df1[lda_features[0]], X_df1[lda_features[1]], ax=ax,  c=colors, m=markers)
+    plt.show()
+  ```
+]
+
+#calepin.chunk(
+  results: "auto",
+  label: "fig-svm",
+  fig-caption: [SVM],
+  fig-layout-columns: (1fr, 1fr),
+  fig-subcaptions: (
+    [df1],
+    [df2],
+    [df5],
+    [df10],
+    [df20],
+    [df50],
+    [df100],
+    [df1000],
+    [df10k],
+  ),
+)[
+  ```python
+  X_df1 = dfs[1][list(lda_features)]
+  y_df1 = dfs[1][class_label]
+  colors = y_df1.map(lambda q: class_to_color_map[q])
+  markers = y_df1.map(lambda q: class_to_marker_map[q])
+
+  lda_clfs = {}
+
+  for k,df in dfs.items():
+    X = df[list(lda_features)]
+    y = df[class_label]
+
+    clf = LinearSVC().fit(X, y)
+
+    cmap = ListedColormap([class_to_color_map[c] for c in clf.classes_])
+    fig, ax = plt.subplots()
+    ax.set_axisbelow(True)
+    plt.grid()
+
+    DecisionBoundaryDisplay.from_estimator(
+        clf, X, response_method="predict",
+        eps=1.0,
+        ax=ax,
+        xlabel=lda_features[0], ylabel=lda_features[1],
+        alpha=0.2,
+        cmap=cmap,
+        grid_resolution=256,
+    )
+    mscatter(X_df1[lda_features[0]], X_df1[lda_features[1]], ax=ax,  c=colors, m=markers)
+    plt.show()
   ```
 ]
