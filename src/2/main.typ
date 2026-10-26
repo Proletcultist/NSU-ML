@@ -346,8 +346,6 @@ And all features except for:
   colors = y_df1.map(lambda q: class_to_color_map[q])
   markers = y_df1.map(lambda q: class_to_marker_map[q])
 
-  lda_clfs = {}
-
   for k,df in dfs.items():
     X = df[list(lda_features)]
     y = df[class_label]
@@ -370,5 +368,90 @@ And all features except for:
     )
     mscatter(X_df1[lda_features[0]], X_df1[lda_features[1]], ax=ax,  c=colors, m=markers)
     plt.show()
+  ```
+]
+
+= Means
+
+#calepin.chunk(
+  results: "typst",
+  label: "fig-means",
+  warning: false,
+)[
+  ```python
+  table = []
+
+  for k,df in dfs.items():
+    X = df[list(lda_features)].values
+    y = df[class_label].values
+
+    clf = lda_clfs[k]
+
+    mu0 = clf.means_[0]
+    mu1 = clf.means_[1]
+
+    midpoint = (mu0 + mu1) / 2.0
+
+    overall_mean = X.mean(axis=0)
+
+    d0 = clf.decision_function([mu0])[0]
+    d1 = clf.decision_function([mu1])[0]
+    t = d0 / (d0 - d1)
+    intersection_pt = (1 - t) * mu0 + t * mu1
+
+    table.append({
+      'dataset': 'df' + str(k),
+      'means midpoint': (midpoint[0] ,midpoint[1]),
+      'overall mean': (overall_mean[0], overall_mean[1]),
+      'intersection': (intersection_pt[0], intersection_pt[1]),
+    })
+
+  means_result = pd.DataFrame(table)
+
+  means_result_for_display = means_result.copy()
+  means_result_for_display[['means midpoint', 'overall mean', 'intersection']] = means_result_for_display[['means midpoint', 'overall mean', 'intersection']].map(lambda p: f'({sigfig.round(p[0], sigfigs=4, warn=False)}, {sigfig.round(p[1], sigfigs=4, warn=False)})')
+
+  display_dataframe(
+    means_result_for_display,
+    caption='[aboba]',
+  )
+  ```
+]
+
+#calepin.chunk(
+  results: "auto",
+  label: "fig-mean-plots",
+  fig-layout-columns: (1fr, 1fr),
+  fig-subcaptions: (
+    [X coordinate],
+    [Y coordinate],
+  )
+)[
+  ```python
+  fig, ax = plt.subplots()
+
+  ax.plot(means_result['dataset'], means_result['means midpoint'].map(lambda p: p[0]), marker='o', label='means midpoint (x)')
+  ax.plot(means_result['dataset'], means_result['overall mean'].map(lambda p: p[0]), marker='s', label='overall mean (x)')
+  ax.plot(means_result['dataset'], means_result['intersection'].map(lambda p: p[0]), marker='^', label='intersection point (x)')
+  ax.set_xscale('log')
+  ax.set_xlabel('Multiplier')
+  ax.set_ylabel(f'Coordinate value ({lda_features[0]})')
+  ax.grid()
+  ax.legend()
+
+  plt.show()
+
+  fig, ax = plt.subplots()
+
+  ax.plot(means_result['dataset'], means_result['means midpoint'].map(lambda p: p[1]), marker='o', label='means midpoint (y)')
+  ax.plot(means_result['dataset'], means_result['overall mean'].map(lambda p: p[1]), marker='s', label='overall mean (y)')
+  ax.plot(means_result['dataset'], means_result['intersection'].map(lambda p: p[1]), marker='^', label='intersection point (y)')
+  ax.set_xscale('log')
+  ax.set_xlabel('Multiplier')
+  ax.set_ylabel(f'Coordinate value ({lda_features[1]})')
+  ax.grid()
+  ax.legend()
+
+  plt.show()
   ```
 ]
