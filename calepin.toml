@@ -2,4 +2,4 @@ asset-dir = ".calepin"
 
 [executables]
 typst = "typst"
-python = ".venv/bin/python"
+python = ".venv/bin/python3"
