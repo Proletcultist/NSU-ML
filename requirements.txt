@@ -3,3 +3,4 @@ pandas>=3.0.6
 pypst>=0.8.1
 sigfig>=1.4.0
 scikit-learn>=1.9.1
+sklearn-prg>=0.1.1

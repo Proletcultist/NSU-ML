@@ -24,6 +24,11 @@
   label: "imports",
 )[
   ```python
+  import numpy as np
+  from sklearn_prg.metrics import precision_recall_gain_curve
+  from sklearn.metrics import auc, roc_curve, RocCurveDisplay
+  from sklearn.metrics import precision_recall_curve, auc, PrecisionRecallDisplay
+  from sklearn.model_selection import train_test_split
   from sklearn.svm import LinearSVC
   from matplotlib.colors import ListedColormap
   from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
@@ -46,6 +51,7 @@
   secondary_class = 0
 
   lda_features = ('f0', 'f1')
+  test_size = 0.25
 
   class_to_color_map = {
       2: (0.0, 0.8, 0.0, 0.75),
@@ -297,12 +303,19 @@ And all features except for:
   markers = y_df1.map(lambda q: class_to_marker_map[q])
 
   lda_clfs = {}
+  lda_tests = {}
 
   for k,df in dfs.items():
     X = df[list(lda_features)]
     y = df[class_label]
 
-    lda_clfs[k] = LinearDiscriminantAnalysis().fit(X, y)
+    X_train, X_test, y_train, y_test = train_test_split(
+      X, y, random_state=random_state,
+      test_size=test_size,
+    )
+
+    lda_clfs[k] = LinearDiscriminantAnalysis().fit(X_train, y_train)
+    lda_tests[k] = (X_test, y_test)
 
     cmap = ListedColormap([class_to_color_map[c] for c in lda_clfs[k].classes_])
     fig, ax = plt.subplots()
@@ -453,5 +466,152 @@ And all features except for:
   ax.legend()
 
   plt.show()
+  ```
+]
+
+= ROC, PR, PRgain
+
+#calepin.chunk(
+  results: "hide",
+  label: "roc-pr-prgain-functions",
+)[
+  ```python
+  def display_classifier_roc_auc(clf, target_class, X_test, y_test, clf_name):
+      fpr, tpr, thresholds = roc_curve(
+        y_test,
+        clf.predict_proba(X_test)[:, np.where(clf.classes_ == target_class)[0]], 
+        pos_label=target_class,
+      )
+      roc_auc = auc(fpr, tpr)
+      display = RocCurveDisplay(
+        fpr=fpr, tpr=tpr, roc_auc=roc_auc,
+        name=clf_name, pos_label=target_class,
+      )
+      display.plot()
+
+      plt.show()
+
+  def display_classifier_pr_auc(clf, target_class, X_test, y_test, clf_name):
+      precision, recall, thresholds = precision_recall_curve(
+          y_test,
+          clf.predict_proba(X_test)[:, np.where(clf.classes_ == target_class)[0]],
+          pos_label=target_class,
+      )
+      
+      pr_auc = auc(recall, precision)
+      
+      display = PrecisionRecallDisplay(
+          precision=precision,
+          recall=recall,
+          average_precision=pr_auc,
+          name=clf_name,
+          pos_label=target_class,
+      )
+      display.plot()
+
+      plt.show()
+
+  def display_classifier_prgain_auc(clf, target_class, X_test, y_test, clf_name):
+      y_score = clf.predict_proba(X_test)[:, np.where(clf.classes_ == target_class)[0]]
+      y_true_binary = (y_test == target_class).astype(int)
+      
+      precision, recall, _ = precision_recall_curve(y_true_binary, y_score, pos_label=1)
+      
+      pi = np.mean(y_true_binary)
+      
+      with np.errstate(divide='ignore', invalid='ignore'):
+          precision_gain = np.clip((precision - pi) / ((1 - pi) * precision), 0, 1)
+          recall_gain = np.clip((recall - pi) / ((1 - pi) * recall), 0, 1)
+      
+      sort_idx = np.argsort(recall_gain)
+      rg_sorted = recall_gain[sort_idx]
+      pg_sorted = precision_gain[sort_idx]
+      
+      auprg = auc(rg_sorted, pg_sorted)
+      
+      fig, ax = plt.subplots(figsize=(6, 5))
+      ax.plot(rg_sorted, pg_sorted, label=f'{clf_name} (AUPRG = {auprg:.3f})', color='tab:blue')
+      
+      ax.set_xlim([0.0, 1.0])
+      ax.set_ylim([0.0, 1.05])
+      ax.set_xlabel('Recall Gain')
+      ax.set_ylabel('Precision Gain')
+      ax.set_title(f'PR-Gain Curve (Target Class: {target_class})')
+      ax.grid()
+      ax.legend(loc="lower left")
+      
+      plt.show()
+  ```
+]
+
+#calepin.chunk(
+  results: "auto",
+  label: "fig-roc-majority-class",
+  fig-caption: [LDA ROC with majority class as target class],
+  fig-layout-columns: (1fr, 1fr, 1fr),
+)[
+  ```python
+  for k in dfs.keys():
+    display_classifier_roc_auc(lda_clfs[k], class_to_multiply, lda_tests[k][0], lda_tests[k][1], "df" + str(k))
+  ```
+]
+
+#calepin.chunk(
+  results: "auto",
+  label: "fig-pr-majority-class",
+  fig-caption: [LDA PRC with majority class as target class],
+  fig-layout-columns: (1fr, 1fr, 1fr),
+)[
+  ```python
+  for k in dfs.keys():
+    display_classifier_pr_auc(lda_clfs[k], class_to_multiply, lda_tests[k][0], lda_tests[k][1], "df" + str(k))
+  ```
+]
+
+#calepin.chunk(
+  results: "auto",
+  label: "fig-prgain-majority-class",
+  fig-caption: [LDA PRgain with majority class as target class],
+  fig-layout-columns: (1fr, 1fr, 1fr),
+)[
+  ```python
+  for k in dfs.keys():
+    display_classifier_prgain_auc(lda_clfs[k], class_to_multiply, lda_tests[k][0], lda_tests[k][1], "df" + str(k))
+  ```
+]
+
+#calepin.chunk(
+  results: "auto",
+  label: "fig-roc-minority-class",
+  fig-caption: [LDA ROC with minority class as target class],
+  fig-layout-columns: (1fr, 1fr, 1fr),
+)[
+  ```python
+  for k in dfs.keys():
+    display_classifier_roc_auc(lda_clfs[k], secondary_class, lda_tests[k][0], lda_tests[k][1], "df" + str(k))
+  ```
+]
+
+#calepin.chunk(
+  results: "auto",
+  label: "fig-pr-minority-class",
+  fig-caption: [LDA PRC with minority class as target class],
+  fig-layout-columns: (1fr, 1fr, 1fr),
+)[
+  ```python
+  for k in dfs.keys():
+    display_classifier_pr_auc(lda_clfs[k], secondary_class, lda_tests[k][0], lda_tests[k][1], "df" + str(k))
+  ```
+]
+
+#calepin.chunk(
+  results: "auto",
+  label: "fig-prgain-minority-class",
+  fig-caption: [LDA PRgain with minority class as target class],
+  fig-layout-columns: (1fr, 1fr, 1fr),
+)[
+  ```python
+  for k in dfs.keys():
+    display_classifier_prgain_auc(lda_clfs[k], secondary_class, lda_tests[k][0], lda_tests[k][1], "df" + str(k))
   ```
 ]
