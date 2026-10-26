@@ -11,6 +11,7 @@ BUILD_DIR = build
 
 all: first
 first: ${BUILD_DIR}/1.pdf
+second: ${BUILD_DIR}/2.pdf
 
 ${BUILD_DIR}/1.pdf: ${SRC_DIR}/1/data.csv
 
