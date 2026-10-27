@@ -24,6 +24,9 @@
   label: "imports",
 )[
   ```python
+  from scipy import stats
+  from sklearn.base import clone
+  from sklearn.model_selection import StratifiedKFold, KFold
   import numpy as np
   from sklearn_prg.metrics import precision_recall_gain_curve
   from sklearn.metrics import auc, roc_curve, RocCurveDisplay
@@ -63,6 +66,8 @@
       1: '.',
       0: 'X',
   }
+
+  confidence_level = 0.95
 
   df1_X, df1_y = make_blobs(
     n_samples=initial_n_samples,
@@ -613,5 +618,194 @@ And all features except for:
   ```python
   for k in dfs.keys():
     display_classifier_prgain_auc(lda_clfs[k], secondary_class, lda_tests[k][0], lda_tests[k][1], "df" + str(k))
+  ```
+]
+
+= Cross validation
+
+#calepin.chunk(
+  results: "hide",
+  label: "cross-validation-functions",
+)[
+  ```python
+  def display_roc_cross_validated(
+      estimator, X, y, cv, pos_label, estimator_name, ci=0.95
+  ):
+      n_splits = cv.get_n_splits(X, y)
+      
+      y_real = []
+      y_proba = []
+      fold_aurocs = []
+
+      X_arr = X.values
+      y_arr = y.values
+      
+      for train_idx, test_idx in cv.split(X, y):
+          X_train, X_test = X_arr[train_idx], X_arr[test_idx]
+          y_train, y_test = y_arr[train_idx], y_arr[test_idx]
+          
+          estimator.fit(X_train, y_train)
+          
+          pred_proba = estimator.predict_proba(X_test)[:, np.where(estimator.classes_ == pos_label)[0]]
+          
+          fpr_fold, tpr_fold, _ = roc_curve(y_test, pred_proba, pos_label=pos_label)
+          fold_aurocs.append(auc(fpr_fold, tpr_fold))
+          
+          y_real.append(y_test)
+          y_proba.append(pred_proba)
+          
+      y_real_concat = np.concatenate(y_real)
+      y_proba_concat = np.concatenate(y_proba)
+      
+      fpr_overall, tpr_overall, _ = roc_curve(y_real_concat, y_proba_concat, pos_label=pos_label)
+      auc_overall = auc(fpr_overall, tpr_overall)
+      
+      mean_auc = np.mean(fold_aurocs)
+      std_auc = np.std(fold_aurocs, ddof=1) if n_splits > 1 else 0.0
+      sem_auc = std_auc / np.sqrt(n_splits) if n_splits > 1 else 0.0
+      
+      t_crit = stats.t.ppf((1 + ci) / 2, df=n_splits - 1) if n_splits > 1 else 1.96
+      margin_error = t_crit * sem_auc
+      ci_lower = np.clip(mean_auc - margin_error, 0, 1)
+      ci_upper = np.clip(mean_auc + margin_error, 0, 1)
+      
+      fig, ax = plt.subplots(figsize=(6, 5))
+      display = RocCurveDisplay(
+          fpr=fpr_overall,
+          tpr=tpr_overall,
+          roc_auc=auc_overall,
+          name=estimator_name,
+          pos_label=pos_label,
+      )
+      display.plot(ax=ax)
+      
+      ax.set_title(f"Overall CV ROC Curve ({estimator_name})")
+      ax.grid()
+      handles, labels = ax.get_legend_handles_labels()
+      labels[0] += f"\n({int(ci*100)}% CI: [{ci_lower:.3f}, {ci_upper:.3f}])"
+      ax.legend(handles=handles, labels=labels, loc="lower right", fontsize="small")
+      
+      plt.show()
+
+  def display_prc_cross_validated(
+      estimator, X, y, cv, pos_label, estimator_name, ci=0.95
+  ):
+      n_splits = cv.get_n_splits(X, y)
+      
+      y_real = []
+      y_proba = []
+      fold_auprcs = []
+
+      X_arr = X.values
+      y_arr = y.values
+      
+      for train_idx, test_idx in cv.split(X, y):
+          X_train, X_test = X_arr[train_idx], X_arr[test_idx]
+          y_train, y_test = y_arr[train_idx], y_arr[test_idx]
+          
+          estimator.fit(X_train, y_train)
+          
+          pred_proba = estimator.predict_proba(X_test)[:, np.where(estimator.classes_ == pos_label)[0]]
+          
+          prec_fold, rec_fold, _ = precision_recall_curve(y_test, pred_proba, pos_label=pos_label)
+          fold_auprcs.append(auc(rec_fold, prec_fold))
+          
+          y_real.append(y_test)
+          y_proba.append(pred_proba)
+          
+      y_real_concat = np.concatenate(y_real)
+      y_proba_concat = np.concatenate(y_proba)
+      
+      prec_overall, rec_overall, _ = precision_recall_curve(
+          y_real_concat, y_proba_concat, pos_label=pos_label
+      )
+      auc_overall = auc(rec_overall, prec_overall)
+      
+      mean_auc = np.mean(fold_auprcs)
+      std_auc = np.std(fold_auprcs, ddof=1) if n_splits > 1 else 0.0
+      sem_auc = std_auc / np.sqrt(n_splits) if n_splits > 1 else 0.0
+      
+      t_crit = stats.t.ppf((1 + ci) / 2, df=n_splits - 1) if n_splits > 1 else 1.96
+      margin_error = t_crit * sem_auc
+      ci_lower = np.clip(mean_auc - margin_error, 0, 1)
+      ci_upper = np.clip(mean_auc + margin_error, 0, 1)
+      
+      fig, ax = plt.subplots(figsize=(6, 5))
+      display = PrecisionRecallDisplay(
+          precision=prec_overall,
+          recall=rec_overall,
+          average_precision=auc_overall,
+          name=estimator_name,
+          pos_label=pos_label,
+      )
+      display.plot(ax=ax)
+      
+      ax.set_title(f"Overall CV PR Curve ({estimator_name})")
+      ax.grid()
+      handles, labels = ax.get_legend_handles_labels()
+      labels[0] += f"\n({int(ci*100)}% CI: [{ci_lower:.3f}, {ci_upper:.3f}])"
+      ax.legend(handles=handles, labels=labels, loc="lower left", fontsize="small")
+      
+      plt.show()
+  ```
+]
+
+#calepin.chunk(
+  results: "auto",
+  label: "fig-prc-cross-validated",
+  fig-caption: [LDA PRC with cross validation],
+  fig-layout-columns: (1fr, 1fr, 1fr),
+  fig-subcaptions: (
+    [3-Fold],
+    [5-Fold],
+    [10-Fold],
+    [20-Fold],
+    [50-Fold],
+    [100-Fold],
+  )
+)[
+  ```python
+  for folds in [3, 5, 10, 20, 50, 100]:
+    X = dfs[10000][list(lda_features)]
+    y = dfs[10000][class_label]
+
+    display_prc_cross_validated(
+      LinearDiscriminantAnalysis(),
+      X,
+      y,
+      StratifiedKFold(n_splits=folds),
+      secondary_class,
+      "LDA",
+    )
+  ```
+]
+
+#calepin.chunk(
+  results: "auto",
+  label: "fig-roc-cross-validated",
+  fig-caption: [LDA ROC with cross validation],
+  fig-layout-columns: (1fr, 1fr, 1fr),
+  fig-subcaptions: (
+    [3-Fold],
+    [5-Fold],
+    [10-Fold],
+    [20-Fold],
+    [50-Fold],
+    [100-Fold],
+  )
+)[
+  ```python
+  for folds in [3, 5, 10, 20, 50, 100]:
+    X = dfs[10000][list(lda_features)]
+    y = dfs[10000][class_label]
+
+    display_roc_cross_validated(
+      LinearDiscriminantAnalysis(),
+      X,
+      y,
+      StratifiedKFold(n_splits=folds),
+      secondary_class,
+      "LDA",
+    )
   ```
 ]
