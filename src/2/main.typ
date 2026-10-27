@@ -752,36 +752,6 @@ And all features except for:
 
 #calepin.chunk(
   results: "auto",
-  label: "fig-prc-cross-validated",
-  fig-caption: [LDA PRC with cross validation],
-  fig-layout-columns: (1fr, 1fr, 1fr),
-  fig-subcaptions: (
-    [3-Fold],
-    [5-Fold],
-    [10-Fold],
-    [20-Fold],
-    [50-Fold],
-    [100-Fold],
-  )
-)[
-  ```python
-  for folds in [3, 5, 10, 20, 50, 100]:
-    X = dfs[10000][list(lda_features)]
-    y = dfs[10000][class_label]
-
-    display_prc_cross_validated(
-      LinearDiscriminantAnalysis(),
-      X,
-      y,
-      StratifiedKFold(n_splits=folds),
-      secondary_class,
-      "LDA",
-    )
-  ```
-]
-
-#calepin.chunk(
-  results: "auto",
   label: "fig-roc-cross-validated",
   fig-caption: [LDA ROC with cross validation],
   fig-layout-columns: (1fr, 1fr, 1fr),
@@ -800,6 +770,36 @@ And all features except for:
     y = dfs[10000][class_label]
 
     display_roc_cross_validated(
+      LinearDiscriminantAnalysis(),
+      X,
+      y,
+      StratifiedKFold(n_splits=folds),
+      secondary_class,
+      "LDA",
+    )
+  ```
+]
+
+#calepin.chunk(
+  results: "auto",
+  label: "fig-prc-cross-validated",
+  fig-caption: [LDA PRC with cross validation],
+  fig-layout-columns: (1fr, 1fr, 1fr),
+  fig-subcaptions: (
+    [3-Fold],
+    [5-Fold],
+    [10-Fold],
+    [20-Fold],
+    [50-Fold],
+    [100-Fold],
+  )
+)[
+  ```python
+  for folds in [3, 5, 10, 20, 50, 100]:
+    X = dfs[10000][list(lda_features)]
+    y = dfs[10000][class_label]
+
+    display_prc_cross_validated(
       LinearDiscriminantAnalysis(),
       X,
       y,
