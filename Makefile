@@ -9,9 +9,10 @@ SRC_DIR = src
 VENV_DIR = .venv
 BUILD_DIR = build
 
-all: first
+all: first second third
 first: ${BUILD_DIR}/1.pdf
 second: ${BUILD_DIR}/2.pdf
+third: ${BUILD_DIR}/3.pdf
 
 ${BUILD_DIR}/1.pdf: ${SRC_DIR}/1/data.csv
 
