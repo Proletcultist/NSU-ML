@@ -49,6 +49,7 @@
   feature_names = ['f0', 'f1', 'f2', 'f3']
   class_label = 'label'
   random_state = 1
+  joint_feature_name = 'X'
 
   class_to_enlarge = 0
   secondary_class = 1
@@ -284,22 +285,43 @@
       ax.plot(specificity, sensitivity, 'o')
 
   def plot_specificity_sensitivity_ci(
-      clf, target_class, X, y,
-      ci, clf_name,
-      boot_n, ax
+      clf, target_class, X, y, 
+      ci, clf_name, 
+      boot_n, random_state, ax
   ):
-      (spec_low, spec_high), (sens_low, sens_high) = boot.ci(
-        np.arange(len(y)),
-        statfunction=lambda idx: calc_specificity_sensitivity_point(clf, target_class, X.iloc[idx], y.iloc[idx]),
-        alpha = 1 - ci,
-        output='lowhigh',
-        n_samples=boot_n
+      y_true = np.asarray(y).ravel() == target_class
+      y_pred = np.asarray(clf.predict(X)).ravel() == target_class
+
+      rng = np.random.default_rng(random_state)
+      n = len(y_true)
+      boot_stats = np.empty((boot_n, 2), dtype=float)
+
+      for i in range(boot_n):
+          idx = rng.integers(0, n, size=n)
+          yt = y_true[idx]
+          yp = y_pred[idx]
+
+          pos = yt.sum()
+          neg = n - pos
+          tp = np.logical_and(yt, yp).sum()
+          fp = np.logical_and(~yt, yp).sum()
+
+          fpr = (fp / neg) if neg > 0 else np.nan
+          tpr = (tp / pos) if pos > 0 else np.nan
+          boot_stats[i] = (fpr, tpr)
+
+      q_low = 100 * (1 - ci) / 2
+      q_high = 100 * (1 + ci) / 2
+      (fpr_low, tpr_low), (fpr_high, tpr_high) = np.nanpercentile(
+          boot_stats, [q_low, q_high], axis=0
       )
 
       rect = Rectangle(
-          xy=(spec_low, sens_low),
-          width=spec_high - spec_low,
-          height=sens_high - sens_low,
+          xy=(fpr_low, tpr_low),
+          width=fpr_high - fpr_low,
+          height=tpr_high - tpr_low,
+          facecolor="steelblue",
+          edgecolor="navy",
           alpha=0.25,
       )
       ax.add_patch(rect)
@@ -311,6 +333,7 @@
       regression_feature, class_label,
       classes, target_class,
       confidence_level, boot_n,
+      random_state,
   ):
       linr = LinearRegression().fit(X_train, y_train)
       logr = LogisticRegression().fit(X_train, y_train)
@@ -342,7 +365,7 @@
       plot_specificity_sensitivity_ci(
           logr, target_class, X_test, y_test,
           confidence_level, "LogReg",
-          boot_n, ax
+          boot_n, random_state, ax
       )
 
       plt.show()
@@ -426,7 +449,86 @@ And all features except for:
               class_to_color_map, class_to_marker_map,
               regression_feature, class_label,
               [class_to_enlarge, secondary_class], secondary_class,
-              confidence_level, boot_n,
+              confidence_level, boot_n, random_state,
+          )
+
+  ```
+]
+
+= Classification of reduced datasets with LDA and LogReg
+
+#calepin.chunk(
+  results: "hide",
+  label: "dataset-reduction",
+)[
+  ```python
+  logdfs = {}
+  for amount in dfs:
+      logdfs[amount] = {}
+      for cord in dfs[amount]:
+          data = dfs[amount][cord]
+          data = data[data[class_label].map(lambda c: c == class_to_enlarge or c == secondary_class)]
+
+          X = data[feature_names]
+          y = data[class_label]
+
+          linr = LinearRegression().fit(X, y)
+          
+          logdfs[amount][cord] = pd.DataFrame({
+              joint_feature_name: linr.predict(X),
+              class_label: y.values
+          })
+  ```
+]
+
+#calepin.chunk(
+  results: "auto",
+  label: "fig-reduced-regressions",
+  fig-caption: [Linear/Logistic regression on reduced datasets],
+  fig-layout-columns: (1fr, 1fr),
+  fig-subcaptions: (
+    [logdf_0],
+    [logdf_0],
+    [logdf_1_5],
+    [logdf_1_5],
+    [logdf_1_10],
+    [logdf_1_10],
+    [logdf_1_20],
+    [logdf_1_20],
+    [logdf_10_5],
+    [logdf_10_5],
+    [logdf_10_10],
+    [logdf_10_10],
+    [logdf_10_20],
+    [logdf_10_20],
+    [logdf_100_5],
+    [logdf_100_5],
+    [logdf_100_10],
+    [logdf_100_10],
+    [logdf_100_20],
+    [logdf_100_20],
+  ),
+  warning: false,
+)[
+  ```python
+  for amount in logdfs:
+      for cord in logdfs[amount]:
+          data = logdfs[amount][cord]
+          X = data[[joint_feature_name]]
+          y = data[class_label]
+
+          X_train, X_test, y_train, y_test = train_test_split(
+            X, y, random_state=random_state,
+            test_size=test_size,
+          )
+
+          display_lin_log_regs(
+              X_train, y_train,
+              X_test, y_test,
+              class_to_color_map, class_to_marker_map,
+              joint_feature_name, class_label,
+              [class_to_enlarge, secondary_class], secondary_class,
+              confidence_level, boot_n, random_state, 
           )
 
   ```
