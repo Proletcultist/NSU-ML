@@ -4,3 +4,4 @@ pypst>=0.8.1
 sigfig>=1.4.0
 scikit-learn>=1.9.1
 sklearn-prg>=0.1.1
+scikits.bootstrap>=1.1.1

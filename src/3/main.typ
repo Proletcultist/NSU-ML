@@ -14,6 +14,7 @@
 )
 #calepin.setup(echo: true)
 
+#show figure: set block(breakable: true)
 #let py = calepin.inline.with("python")
 
 #align(center, title())
@@ -24,6 +25,9 @@
   label: "imports",
 )[
   ```python
+  from matplotlib.patches import Rectangle
+  import scikits.bootstrap as boot
+  from sklearn.metrics import confusion_matrix, auc, roc_curve, RocCurveDisplay
   import numpy as np
   from sklearn.linear_model import LinearRegression, LogisticRegression
   from sklearn.datasets import make_blobs
@@ -50,6 +54,7 @@
   secondary_class = 1
   regression_feature = 'f0'
   test_size = 0.25
+  boot_n = 1000
   confidence_level = 0.95
 
   class_to_color_map = {
@@ -263,25 +268,41 @@
       )
       display.plot(ax=ax)
 
-  def calc_sensitivity_specificity_point(clf, target_class, X_test, y_test):
-    class_mapper = lambda cl: cl if cl == target_class else 'not ' + target_class
-
-    y_test = list(map(class_mapper, y_test))
-    y_pred = list(map(class_mapper, clf.predict(X_test)))
+  def calc_specificity_sensitivity_point(clf, target_class, X_test, y_test):
+    y_true = np.asarray(y_test).ravel() == target_class
+    y_pred = np.asarray(clf.predict(X_test)).ravel() == target_class
 
     tp, fn, fp, tn = confusion_matrix(
-        y_test, y_pred, 
-        labels=[target_class, 'not ' + target_class],
-    ).ravel().tolist()
+        y_true, y_pred, 
+        labels=[True, False],
+    ).ravel()
 
-    return (tp / (tp + fn), tn / (fp + tn))
+    return (1 - tn / (fp + tn), tp / (tp + fn))
 
-  def plot_sensitivity_specificity_point(clf, target_class, X_test, y_test, clf_name, ax):
-      sensitivity, specificity = calc_sensitivity_specificity_point(clf, target_class, X_test, y_test)
-      ax.plot(sensitivity, specificity, 'o')
+  def plot_specificity_sensitivity_point(clf, target_class, X_test, y_test, clf_name, ax):
+      specificity, sensitivity = calc_specificity_sensitivity_point(clf, target_class, X_test, y_test)
+      ax.plot(specificity, sensitivity, 'o')
 
-  def plot_sensitivity_specificity_ci(clf, target_class, X, y, clf_name):
-      pass
+  def plot_specificity_sensitivity_ci(
+      clf, target_class, X, y,
+      ci, clf_name,
+      boot_n, ax
+  ):
+      (spec_low, spec_high), (sens_low, sens_high) = boot.ci(
+        np.arange(len(y)),
+        statfunction=lambda idx: calc_specificity_sensitivity_point(clf, target_class, X.iloc[idx], y.iloc[idx]),
+        alpha = 1 - ci,
+        output='lowhigh',
+        n_samples=boot_n
+      )
+
+      rect = Rectangle(
+          xy=(spec_low, sens_low),
+          width=spec_high - spec_low,
+          height=sens_high - sens_low,
+          alpha=0.25,
+      )
+      ax.add_patch(rect)
 
   ```
 ]
@@ -309,18 +330,29 @@ And all features except for:
 
 #calepin.chunk(
   results: "auto",
-  label: "fig-lr",
-  fig-caption: [Linear regression],
+  label: "fig-regressions",
+  fig-caption: [Linear/Logistic regression],
+  fig-layout-columns: (1fr, 1fr),
   fig-subcaptions: (
     [df_0],
+    [df_0],
+    [df_1_5],
     [df_1_5],
     [df_1_10],
+    [df_1_10],
+    [df_1_20],
     [df_1_20],
     [df_10_5],
+    [df_10_5],
+    [df_10_10],
     [df_10_10],
     [df_10_20],
+    [df_10_20],
+    [df_100_5],
     [df_100_5],
     [df_100_10],
+    [df_100_10],
+    [df_100_20],
     [df_100_20],
   ),
 )[
@@ -336,14 +368,16 @@ And all features except for:
             axis='columns',
           )
           data = data[data[class_label].map(lambda c: c == class_to_enlarge or c == secondary_class)]
-          X = data[regression_feature]
+          X = data[[regression_feature]]
           y = data[class_label]
+
           X_train, X_test, y_train, y_test = train_test_split(
             X, y, random_state=random_state,
             test_size=test_size,
           )
 
-          lr = LinearRegression().fit(X_train.to_frame(), y_train.to_frame())
+          linr = LinearRegression().fit(X_train, y_train)
+          logr = LogisticRegression().fit(X_train, y_train)
 
           fig, ax = plt.subplots()
 
@@ -352,14 +386,28 @@ And all features except for:
           mscatter(X, y, ax=ax,  c=colors, m=markers)
 
           left, right = ax.get_xlim()
-          lr_x = pd.DataFrame({
-              regression_feature: np.linspace(left, right, num=256)
+          r_x = pd.DataFrame({
+              regression_feature: np.linspace(left, right, num=1024)
           })
-          lr_y = lr.predict(lr_x)
-          ax.plot(lr_x, lr_y, color=(0.0, 0.0, 0.0))
+          linr_y = linr.predict(r_x)
+          logr_y = abs(class_to_enlarge - secondary_class) * logr.predict_proba(r_x)[:, 1] + min(class_to_enlarge, secondary_class)
+          ax.plot(r_x, linr_y, color=(0.0, 0.0, 0.6), label="LinReg")
+          ax.plot(r_x, logr_y, color=(0.0, 0.0, 0.0), label="LogReg")
+          ax.legend(loc='upper right', shadow=True, fontsize='x-large')
 
           plt.xlabel(regression_feature)
           plt.ylabel(class_label)
+
+          plt.show()
+
+          fig, ax = plt.subplots()
+          plot_classifier_roc_auc(logr, secondary_class, X_test, y_test, "LogReg", ax)
+          plot_specificity_sensitivity_point(logr, secondary_class, X_test, y_test, "LogReg", ax)
+          plot_specificity_sensitivity_ci(
+              logr, secondary_class, X_test, y_test,
+              confidence_level, "LogReg",
+              boot_n, ax
+          )
 
           plt.show()
   ```
