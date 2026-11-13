@@ -304,6 +304,49 @@
       )
       ax.add_patch(rect)
 
+  def display_lin_log_regs(
+      X_train, y_train,
+      X_test, y_test,
+      class_to_color_map, class_to_marker_map,
+      regression_feature, class_label,
+      classes, target_class,
+      confidence_level, boot_n,
+  ):
+      linr = LinearRegression().fit(X_train, y_train)
+      logr = LogisticRegression().fit(X_train, y_train)
+
+      fig, ax = plt.subplots()
+
+      colors = y.map(lambda q: class_to_color_map[q])
+      markers = y.map(lambda q: class_to_marker_map[q])
+      mscatter(X, y, ax=ax,  c=colors, m=markers)
+
+      left, right = ax.get_xlim()
+      r_x = pd.DataFrame({
+          regression_feature: np.linspace(left, right, num=1024)
+      })
+      linr_y = linr.predict(r_x)
+      logr_y = abs(classes[0] - classes[1]) * logr.predict_proba(r_x)[:, 1] + min(classes)
+      ax.plot(r_x, linr_y, color=(0.0, 0.0, 0.6), label="LinReg")
+      ax.plot(r_x, logr_y, color=(0.0, 0.0, 0.0), label="LogReg")
+      ax.legend(loc='upper right', shadow=True, fontsize='x-large')
+
+      plt.xlabel(regression_feature)
+      plt.ylabel(class_label)
+
+      plt.show()
+
+      fig, ax = plt.subplots()
+      plot_classifier_roc_auc(logr, target_class, X_test, y_test, "LogReg", ax)
+      plot_specificity_sensitivity_point(logr, target_class, X_test, y_test, "LogReg", ax)
+      plot_specificity_sensitivity_ci(
+          logr, target_class, X_test, y_test,
+          confidence_level, "LogReg",
+          boot_n, ax
+      )
+
+      plt.show()
+
   ```
 ]
 
@@ -355,6 +398,7 @@ And all features except for:
     [df_100_20],
     [df_100_20],
   ),
+  warning: false,
 )[
   ```python
   for amount in dfs:
@@ -376,39 +420,14 @@ And all features except for:
             test_size=test_size,
           )
 
-          linr = LinearRegression().fit(X_train, y_train)
-          logr = LogisticRegression().fit(X_train, y_train)
-
-          fig, ax = plt.subplots()
-
-          colors = y.map(lambda q: class_to_color_map[q])
-          markers = y.map(lambda q: class_to_marker_map[q])
-          mscatter(X, y, ax=ax,  c=colors, m=markers)
-
-          left, right = ax.get_xlim()
-          r_x = pd.DataFrame({
-              regression_feature: np.linspace(left, right, num=1024)
-          })
-          linr_y = linr.predict(r_x)
-          logr_y = abs(class_to_enlarge - secondary_class) * logr.predict_proba(r_x)[:, 1] + min(class_to_enlarge, secondary_class)
-          ax.plot(r_x, linr_y, color=(0.0, 0.0, 0.6), label="LinReg")
-          ax.plot(r_x, logr_y, color=(0.0, 0.0, 0.0), label="LogReg")
-          ax.legend(loc='upper right', shadow=True, fontsize='x-large')
-
-          plt.xlabel(regression_feature)
-          plt.ylabel(class_label)
-
-          plt.show()
-
-          fig, ax = plt.subplots()
-          plot_classifier_roc_auc(logr, secondary_class, X_test, y_test, "LogReg", ax)
-          plot_specificity_sensitivity_point(logr, secondary_class, X_test, y_test, "LogReg", ax)
-          plot_specificity_sensitivity_ci(
-              logr, secondary_class, X_test, y_test,
-              confidence_level, "LogReg",
-              boot_n, ax
+          display_lin_log_regs(
+              X_train, y_train,
+              X_test, y_test,
+              class_to_color_map, class_to_marker_map,
+              regression_feature, class_label,
+              [class_to_enlarge, secondary_class], secondary_class,
+              confidence_level, boot_n,
           )
 
-          plt.show()
   ```
 ]
