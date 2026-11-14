@@ -269,7 +269,7 @@
       )
       display.plot(ax=ax)
 
-  def calc_specificity_sensitivity_point(clf, target_class, X_test, y_test):
+  def calc_fpr_tpr_point(clf, target_class, X_test, y_test):
     y_true = np.asarray(y_test).ravel() == target_class
     y_pred = np.asarray(clf.predict(X_test)).ravel() == target_class
 
@@ -278,37 +278,29 @@
         labels=[True, False],
     ).ravel()
 
-    return (1 - tn / (fp + tn), tp / (tp + fn))
-
-  def plot_specificity_sensitivity_point(clf, target_class, X_test, y_test, clf_name, ax):
-      specificity, sensitivity = calc_specificity_sensitivity_point(clf, target_class, X_test, y_test)
-      ax.plot(specificity, sensitivity, 'o')
+    fpr = 1 - tn / (fp + tn) if (fp + tn) > 0 else np.nan
+    tpr = tp / (tp + fn) if (tp + fn) > 0 else np.nan
+    return (fpr, tpr)
 
   def plot_specificity_sensitivity_ci(
       clf, target_class, X, y, 
       ci, clf_name, 
       boot_n, random_state, ax
   ):
-      y_true = np.asarray(y).ravel() == target_class
-      y_pred = np.asarray(clf.predict(X)).ravel() == target_class
+      fpr_est, tpr_est = calc_fpr_tpr_point(clf, target_class, X, y)
 
       rng = np.random.default_rng(random_state)
-      n = len(y_true)
+      n = len(y)
       boot_stats = np.empty((boot_n, 2), dtype=float)
 
       for i in range(boot_n):
           idx = rng.integers(0, n, size=n)
-          yt = y_true[idx]
-          yp = y_pred[idx]
+          X_boot = X.iloc[idx]
+          y_boot = y.iloc[idx]
 
-          pos = yt.sum()
-          neg = n - pos
-          tp = np.logical_and(yt, yp).sum()
-          fp = np.logical_and(~yt, yp).sum()
-
-          fpr = (fp / neg) if neg > 0 else np.nan
-          tpr = (tp / pos) if pos > 0 else np.nan
-          boot_stats[i] = (fpr, tpr)
+          boot_stats[i] = calc_fpr_tpr_point(
+              clf, target_class, X_boot, y_boot
+          )
 
       q_low = 100 * (1 - ci) / 2
       q_high = 100 * (1 + ci) / 2
@@ -316,15 +308,26 @@
           boot_stats, [q_low, q_high], axis=0
       )
 
-      rect = Rectangle(
-          xy=(fpr_low, tpr_low),
-          width=fpr_high - fpr_low,
-          height=tpr_high - tpr_low,
-          facecolor="steelblue",
-          edgecolor="navy",
-          alpha=0.25,
+      xerr = np.array([[max(0.0, fpr_est - fpr_low)], [max(0.0, fpr_high - fpr_est)]])
+      yerr = np.array([[max(0.0, tpr_est - tpr_low)], [max(0.0, tpr_high - tpr_est)]])
+
+      ax.errorbar(
+          [fpr_est],
+          [tpr_est],
+          xerr=xerr,
+          yerr=yerr,
+          fmt="o",
+          color="crimson",
+          ecolor="crimson",
+          elinewidth=2.0,
+          capsize=5,
+          capthick=1.8,
+          markersize=6,
+          label=f"{clf_name} ({ci:.0%} CI)",
+          zorder=5,
+          alpha=0.5,
       )
-      ax.add_patch(rect)
+
 
   def display_lin_log_regs(
       X_train, y_train,
@@ -361,7 +364,6 @@
 
       fig, ax = plt.subplots()
       plot_classifier_roc_auc(logr, target_class, X_test, y_test, "LogReg", ax)
-      plot_specificity_sensitivity_point(logr, target_class, X_test, y_test, "LogReg", ax)
       plot_specificity_sensitivity_ci(
           logr, target_class, X_test, y_test,
           confidence_level, "LogReg",
