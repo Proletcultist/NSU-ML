@@ -58,6 +58,9 @@
   boot_n = 1000
   confidence_level = 0.95
 
+  df_A_to_display = 0
+  df_B_to_display = 0
+
   class_to_color_map = {
       2: (0.0, 0.8, 0.0, 0.75),
       1: (0.8, 0.8, 0.0, 0.75),
@@ -372,6 +375,8 @@
 
       plt.show()
 
+      return linr, logr
+
   ```
 ]
 
@@ -460,30 +465,6 @@ And all features except for:
 = Classification of reduced datasets with LDA and LogReg
 
 #calepin.chunk(
-  results: "hide",
-  label: "dataset-reduction",
-)[
-  ```python
-  logdfs = {}
-  for amount in dfs:
-      logdfs[amount] = {}
-      for cord in dfs[amount]:
-          data = dfs[amount][cord]
-          data = data[data[class_label].map(lambda c: c == class_to_enlarge or c == secondary_class)]
-
-          X = data[feature_names]
-          y = data[class_label]
-
-          linr = LinearRegression().fit(X, y)
-          
-          logdfs[amount][cord] = pd.DataFrame({
-              joint_feature_name: linr.predict(X),
-              class_label: y.values
-          })
-  ```
-]
-
-#calepin.chunk(
   results: "auto",
   label: "fig-reduced-regressions",
   fig-caption: [Linear/Logistic regression on reduced datasets],
@@ -513,18 +494,34 @@ And all features except for:
   warning: false,
 )[
   ```python
-  for amount in logdfs:
-      for cord in logdfs[amount]:
-          data = logdfs[amount][cord]
-          X = data[[joint_feature_name]]
+  selected_df = None
+  selected_linr = None
+  selected_logr = None
+  
+  for amount in dfs:
+      for cord in dfs[amount]:
+          data = dfs[amount][cord]
+          data = data[data[class_label].map(lambda c: c == class_to_enlarge or c == secondary_class)]
+
+          X = data[feature_names]
           y = data[class_label]
+
+          linr = LinearRegression().fit(X, y)
+          
+          logdf = pd.DataFrame({
+              joint_feature_name: linr.predict(X),
+              class_label: y.values
+          })
+
+          X = logdf[[joint_feature_name]]
+          y = logdf[class_label]
 
           X_train, X_test, y_train, y_test = train_test_split(
             X, y, random_state=random_state,
             test_size=test_size,
           )
 
-          display_lin_log_regs(
+          _, logr = display_lin_log_regs(
               X_train, y_train,
               X_test, y_test,
               class_to_color_map, class_to_marker_map,
@@ -533,5 +530,74 @@ And all features except for:
               confidence_level, boot_n, random_state, 
           )
 
+          if amount == df_A_to_display and amount == df_B_to_display:
+              selected_df = data
+              selected_linr = linr
+              selected_logr = logr
+  ```
+]
+
+= Logistic regression display
+
+The logistic regression + multiple linear regression for dataset #py[`f'df_{df_A_to_display}_{df_B_to_display}'`]:
+
+#calepin.chunk(
+  results: "auto",
+  label: "fig-log-reg",
+  fig-caption: [Logistic regression],
+  fig-layout-columns: (1fr, 1fr),
+)[
+  ```python
+  selected_classes = [class_to_enlarge, secondary_class]
+  X_sel = selected_df[feature_names]
+  y_sel = selected_df[class_label]
+  means = X_sel.mean()
+  y_mid = 0.5 * (class_to_enlarge + secondary_class)
+
+  pairs = list(itools.combinations(feature_names, 2))  # 6 pairs for 4 features
+
+  for (fx, fy) in pairs:
+      fig, ax = plt.subplots()
+
+      x_pad = 0.08 * (X_sel[fx].max() - X_sel[fx].min())
+      y_pad = 0.08 * (X_sel[fy].max() - X_sel[fy].min())
+      xlim = (X_sel[fx].min() - x_pad, X_sel[fx].max() + x_pad)
+      ylim = (X_sel[fy].min() - y_pad, X_sel[fy].max() + y_pad)
+
+      xx, yy = np.meshgrid(
+          np.linspace(*xlim, 150),
+          np.linspace(*ylim, 150),
+      )
+      grid_4d = pd.DataFrame({c: np.full(xx.size, means[c]) for c in feature_names})
+      grid_4d[fx] = xx.ravel()
+      grid_4d[fy] = yy.ravel()
+
+      grid_1d = pd.DataFrame({joint_feature_name: selected_linr.predict(grid_4d)})
+      Z = selected_logr.decision_function(grid_1d).reshape(xx.shape)
+
+      cf = ax.contourf(xx, yy, Z, levels=15, cmap="RdBu_r", alpha=0.25)
+
+      colors = y_sel.map(class_to_color_map)
+      markers = y_sel.map(class_to_marker_map)
+      mscatter(X_sel[fx], X_sel[fy], ax=ax, c=colors, m=markers, edgecolors="k", linewidths=0.4, zorder=3)
+
+      other_cols = [c for c in feature_names if c not in (fx, fy)]
+      const_other = sum(
+          selected_linr.coef_[feature_names.index(c)] * means[c] for c in other_cols
+      )
+      bx = selected_linr.coef_[feature_names.index(fx)]
+      by = selected_linr.coef_[feature_names.index(fy)]
+      b0 = selected_linr.intercept_
+
+      x_line = np.linspace(*xlim, 200)
+      y_line = (y_mid - b0 - const_other - bx * x_line) / by
+      ax.plot(x_line, y_line, zorder=4)
+
+      ax.set_xlim(xlim)
+      ax.set_ylim(ylim)
+      ax.set_xlabel(fx)
+      ax.set_ylabel(fy)
+
+      plt.show()
   ```
 ]
