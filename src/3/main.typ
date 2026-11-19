@@ -58,8 +58,8 @@
   boot_n = 1000
   confidence_level = 0.95
 
-  df_A_to_display = 0
-  df_B_to_display = 0
+  df_A_to_display = 100
+  df_B_to_display = 10
 
   class_to_color_map = {
       2: (0.0, 0.8, 0.0, 0.75),
