@@ -530,7 +530,7 @@ And all features except for:
               confidence_level, boot_n, random_state, 
           )
 
-          if amount == df_A_to_display and amount == df_B_to_display:
+          if amount == df_A_to_display and cord == df_B_to_display:
               selected_df = data
               selected_linr = linr
               selected_logr = logr
