@@ -69,6 +69,26 @@
 
 = Scree plot
 
+#calepin.chunk(
+  results: "auto",
+  label: "fig-df-4-scree",
+  fig-caption: [df_4 scree],
+  fig-layout-columns: (1fr, 1fr),
+  fig-subcaptions: (
+    [df_4],
+    [df_16],
+    [df_256],
+  ),
+)[
+  ```python
+  dfs_scaled = {}
+  pcas = {}
+  for a in dfs:
+    dfs_scaled[a] = StandardScaler().fit_transform(dfs[a])
+    pcas[a] = PCA().fit(dfs_scaled[a])
+  ```
+]
+
 = Plotting 4 components that explain the greatest amount of variance
 
 == `df_4`
@@ -117,12 +137,8 @@
 
       plt.show()
 
-  X = dfs[4]
-  X_scaled = StandardScaler().fit_transform(X)
-  pca = PCA()
-  scores = pca.fit_transform(X_scaled)
-  loadings = pca.components_
-
+  scores = pcas[4].transform(dfs_scaled[4])
+  loadings = pcas[4].components_
   plot_pc_pairs(scores, loadings, low_components_to_show, show_vectors=False)
   ```
 ]
@@ -147,11 +163,8 @@
   fig-layout-columns: (1fr, 1fr),
 )[
   ```python
-  X = dfs[16]
-  X_scaled = StandardScaler().fit_transform(X)
-  pca = PCA()
-  scores = pca.fit_transform(X_scaled)
-  loadings = pca.components_
+  scores = pcas[16].transform(dfs_scaled[16])
+  loadings = pcas[16].components_
   plot_pc_pairs(scores, loadings, low_components_to_show, show_vectors=False)
   ```
 ]
@@ -176,11 +189,8 @@
   fig-layout-columns: (1fr, 1fr),
 )[
   ```python
-  X = dfs[256]
-  X_scaled = StandardScaler().fit_transform(X)
-  pca = PCA()
-  scores = pca.fit_transform(X_scaled)
-  loadings = pca.components_
+  scores = pcas[256].transform(dfs_scaled[256])
+  loadings = pcas[256].components_
   plot_pc_pairs(scores, loadings, low_components_to_show, show_vectors=False)
   ```
 ]
