@@ -28,13 +28,14 @@
   import matplotlib.pyplot as plt
   import matplotlib.patches as mpatches
   from umap import UMAP
+  from pacmap import PaCMAP
   from sklearn.preprocessing import StandardScaler
   from sklearn.decomposition import PCA
   from itertools import combinations
 
   low_components_to_show = [0, 1, 2, 3]
   high_components_to_show = [129, 130, 131, 132]
-  random_state = 1
+  random_state = 111
 
   dfs = {}
   for a in [4, 16, 256]:
@@ -248,12 +249,44 @@
   label: "fig-umap-df-a",
   fig-caption: [df_a datasets UMAP visualization],
   fig-layout-columns: (1fr, 1fr),
+  fig-subcaptions: (
+    [df_4],
+    [df_16],
+    [df_256],
+  ),
 )[
   ```python
   for a in dfs_scaled:
     embedding = UMAP(
       n_neighbors=15 if a >= 15 else 3,
       compatibility_layout=False,
+      random_state=random_state,
+    ).fit_transform(dfs_scaled[a])
+
+    fig, ax = plt.subplots()
+    ax.scatter(embedding[:, 0], embedding[:, 1])
+    plt.show()
+  ```
+]
+
+= Visualization of df_a datasets with PacMAP
+
+#calepin.chunk(
+  results: "auto",
+  label: "fig-pacmap-df-a",
+  warning: false,
+  fig-caption: [df_a datasets PacMAP visualization],
+  fig-layout-columns: (1fr, 1fr),
+  fig-subcaptions: (
+    [df_4],
+    [df_16],
+    [df_256],
+  ),
+)[
+  ```python
+  for a in dfs_scaled:
+    embedding = PaCMAP(
+      n_neighbors=10 if a >= 15 else 3,
       random_state=random_state,
     ).fit_transform(dfs_scaled[a])
 
