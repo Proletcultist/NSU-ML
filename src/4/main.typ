@@ -27,6 +27,7 @@
   import numpy as np
   import matplotlib.pyplot as plt
   import matplotlib.patches as mpatches
+  from sklearn.manifold import TSNE
   from umap import UMAP
   from pacmap import PaCMAP
   from sklearn.preprocessing import StandardScaler
@@ -258,7 +259,7 @@
   ```python
   for a in dfs_scaled:
     embedding = UMAP(
-      n_neighbors=15 if a >= 15 else 3,
+      n_neighbors=min(15, a - 1),
       compatibility_layout=False,
       random_state=random_state,
     ).fit_transform(dfs_scaled[a])
@@ -286,8 +287,35 @@
   ```python
   for a in dfs_scaled:
     embedding = PaCMAP(
-      n_neighbors=10 if a >= 15 else 3,
+      n_neighbors=min(10, a - 1),
       random_state=random_state,
+    ).fit_transform(dfs_scaled[a])
+
+    fig, ax = plt.subplots()
+    ax.scatter(embedding[:, 0], embedding[:, 1])
+    plt.show()
+  ```
+]
+
+= Visualization of df_a datasets with tSNE
+
+#calepin.chunk(
+  results: "auto",
+  label: "fig-tsne-df-a",
+  fig-caption: [df_a datasets tSNE visualization],
+  fig-layout-columns: (1fr, 1fr),
+  fig-subcaptions: (
+    [df_4],
+    [df_16],
+    [df_256],
+  ),
+)[
+  ```python
+  for a in dfs_scaled:
+    embedding = TSNE(
+      perplexity=min(30, a - 1),
+      random_state=random_state,
+      learning_rate='auto'
     ).fit_transform(dfs_scaled[a])
 
     fig, ax = plt.subplots()
