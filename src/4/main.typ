@@ -31,6 +31,8 @@
   from sklearn.decomposition import PCA
   from itertools import combinations
 
+  low_components_to_show = [0, 1, 2, 3]
+
   dfs = {}
   for a in [4, 16, 256]:
     dfs[a] = np.zeros((a, a), dtype=int)
@@ -69,11 +71,11 @@
 
 = Plotting 4 components that explain the greatest amount of variance
 
-For `df_4`:
+== `df_4`
 
 #calepin.chunk(
   results: "auto",
-  label: "fig-explanatory-comps",
+  label: "fig-df-4-explanatory-comps",
   fig-caption: [df_4 pairs of components 0, 1, 3, 4],
   fig-layout-columns: (1fr, 1fr),
 )[
@@ -121,17 +123,75 @@ For `df_4`:
   scores = pca.fit_transform(X_scaled)
   loadings = pca.components_
 
-  plot_pc_pairs(scores, loadings, [0, 1, 2, 3], show_vectors=False)
+  plot_pc_pairs(scores, loadings, low_components_to_show, show_vectors=False)
   ```
 ]
 
 #calepin.chunk(
   results: "auto",
-  label: "fig-explanatory-comps-biplot",
+  label: "fig-df-4-explanatory-comps-biplot",
   fig-caption: [df_4 pairs of components 0, 1, 3, 4 on biplot],
   fig-layout-columns: (1fr, 1fr),
 )[
   ```python
-  plot_pc_pairs(scores, loadings, [0, 1, 2, 3], show_vectors=True)
+  plot_pc_pairs(scores, loadings, low_components_to_show, show_vectors=True)
+  ```
+]
+
+== `df_16`
+
+#calepin.chunk(
+  results: "auto",
+  label: "fig-df-16-explanatory-comps",
+  fig-caption: [df_16 pairs of components 0, 1, 3, 4],
+  fig-layout-columns: (1fr, 1fr),
+)[
+  ```python
+  X = dfs[16]
+  X_scaled = StandardScaler().fit_transform(X)
+  pca = PCA()
+  scores = pca.fit_transform(X_scaled)
+  loadings = pca.components_
+  plot_pc_pairs(scores, loadings, low_components_to_show, show_vectors=False)
+  ```
+]
+
+#calepin.chunk(
+  results: "auto",
+  label: "fig-df-16-explanatory-comps-biplot",
+  fig-caption: [df_16 pairs of components 0, 1, 3, 4 on biplot],
+  fig-layout-columns: (1fr, 1fr),
+)[
+  ```python
+  plot_pc_pairs(scores, loadings, low_components_to_show, show_vectors=True)
+  ```
+]
+
+== `df_256`
+
+#calepin.chunk(
+  results: "auto",
+  label: "fig-df-256-explanatory-comps",
+  fig-caption: [df_256 pairs of components 0, 1, 3, 4],
+  fig-layout-columns: (1fr, 1fr),
+)[
+  ```python
+  X = dfs[256]
+  X_scaled = StandardScaler().fit_transform(X)
+  pca = PCA()
+  scores = pca.fit_transform(X_scaled)
+  loadings = pca.components_
+  plot_pc_pairs(scores, loadings, low_components_to_show, show_vectors=False)
+  ```
+]
+
+#calepin.chunk(
+  results: "auto",
+  label: "fig-df-256-explanatory-comps-biplot",
+  fig-caption: [df_256 pairs of components 0, 1, 3, 4 on biplot],
+  fig-layout-columns: (1fr, 1fr),
+)[
+  ```python
+  plot_pc_pairs(scores, loadings, low_components_to_show, show_vectors=True)
   ```
 ]
