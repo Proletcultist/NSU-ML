@@ -36,7 +36,7 @@
 
   low_components_to_show = [0, 1, 2, 3]
   high_components_to_show = [129, 130, 131, 132]
-  random_state = 111
+  random_states = [1337, 222]
 
   dfs = {}
   for a in [4, 16, 256]:
@@ -247,7 +247,7 @@
 
 #calepin.chunk(
   results: "auto",
-  label: "fig-umap-df-a",
+  label: "fig-umap-df-a-1",
   fig-caption: [df_a datasets UMAP visualization],
   fig-layout-columns: (1fr, 1fr),
   fig-subcaptions: (
@@ -261,7 +261,32 @@
     embedding = UMAP(
       n_neighbors=min(15, a - 1),
       compatibility_layout=False,
-      random_state=random_state,
+      random_state=random_states[0],
+    ).fit_transform(dfs_scaled[a])
+
+    fig, ax = plt.subplots()
+    ax.scatter(embedding[:, 0], embedding[:, 1])
+    plt.show()
+  ```
+]
+
+#calepin.chunk(
+  results: "auto",
+  label: "fig-umap-df-a-2",
+  fig-caption: [df_a datasets UMAP visualization 2],
+  fig-layout-columns: (1fr, 1fr),
+  fig-subcaptions: (
+    [df_4],
+    [df_16],
+    [df_256],
+  ),
+)[
+  ```python
+  for a in dfs_scaled:
+    embedding = UMAP(
+      n_neighbors=min(15, a - 1),
+      compatibility_layout=False,
+      random_state=random_states[1],
     ).fit_transform(dfs_scaled[a])
 
     fig, ax = plt.subplots()
@@ -274,7 +299,7 @@
 
 #calepin.chunk(
   results: "auto",
-  label: "fig-pacmap-df-a",
+  label: "fig-pacmap-df-a-1",
   warning: false,
   fig-caption: [df_a datasets PacMAP visualization],
   fig-layout-columns: (1fr, 1fr),
@@ -288,7 +313,32 @@
   for a in dfs_scaled:
     embedding = PaCMAP(
       n_neighbors=min(10, a - 1),
-      random_state=random_state,
+      random_state=random_states[0],
+    ).fit_transform(dfs_scaled[a])
+
+    fig, ax = plt.subplots()
+    ax.scatter(embedding[:, 0], embedding[:, 1])
+    plt.show()
+  ```
+]
+
+#calepin.chunk(
+  results: "auto",
+  label: "fig-pacmap-df-a-2",
+  warning: false,
+  fig-caption: [df_a datasets PacMAP visualization 2],
+  fig-layout-columns: (1fr, 1fr),
+  fig-subcaptions: (
+    [df_4],
+    [df_16],
+    [df_256],
+  ),
+)[
+  ```python
+  for a in dfs_scaled:
+    embedding = PaCMAP(
+      n_neighbors=min(10, a - 1),
+      random_state=random_states[1],
     ).fit_transform(dfs_scaled[a])
 
     fig, ax = plt.subplots()
@@ -301,7 +351,7 @@
 
 #calepin.chunk(
   results: "auto",
-  label: "fig-tsne-df-a",
+  label: "fig-tsne-df-a-1",
   fig-caption: [df_a datasets tSNE visualization],
   fig-layout-columns: (1fr, 1fr),
   fig-subcaptions: (
@@ -314,7 +364,32 @@
   for a in dfs_scaled:
     embedding = TSNE(
       perplexity=min(30, a - 1),
-      random_state=random_state,
+      random_state=random_states[0],
+      learning_rate='auto'
+    ).fit_transform(dfs_scaled[a])
+
+    fig, ax = plt.subplots()
+    ax.scatter(embedding[:, 0], embedding[:, 1])
+    plt.show()
+  ```
+]
+
+#calepin.chunk(
+  results: "auto",
+  label: "fig-tsne-df-a-2",
+  fig-caption: [df_a datasets tSNE visualization 2],
+  fig-layout-columns: (1fr, 1fr),
+  fig-subcaptions: (
+    [df_4],
+    [df_16],
+    [df_256],
+  ),
+)[
+  ```python
+  for a in dfs_scaled:
+    embedding = TSNE(
+      perplexity=min(30, a - 1),
+      random_state=random_states[1],
       learning_rate='auto'
     ).fit_transform(dfs_scaled[a])
 
