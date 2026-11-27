@@ -398,3 +398,84 @@
     plt.show()
   ```
 ]
+
+= Visualization of df_a datasets with UMAP after PCA pre-rotation
+
+#calepin.chunk(
+  results: "auto",
+  label: "fig-umap-prerot-df-a-1",
+  fig-caption: [df_a datasets PCA + UMAP visualization],
+  fig-layout-columns: (1fr, 1fr),
+  fig-subcaptions: (
+    [df_4],
+    [df_16],
+    [df_256],
+  ),
+)[
+  ```python
+  for a in dfs:
+    embedding = UMAP(
+      n_neighbors=min(15, a - 1),
+      compatibility_layout=False,
+      random_state=random_states[0],
+    ).fit_transform(pcas[a].transform(dfs[a]))
+
+    fig, ax = plt.subplots()
+    ax.scatter(embedding[:, 0], embedding[:, 1])
+    plt.show()
+  ```
+]
+
+= Visualization of df_a datasets with PaCMAP after PCA pre-rotation
+
+#calepin.chunk(
+  results: "auto",
+  label: "fig-prerot-pacmap-df-a-1",
+  warning: false,
+  fig-caption: [df_a datasets PCA + PacMAP visualization],
+  fig-layout-columns: (1fr, 1fr),
+  fig-subcaptions: (
+    [df_4],
+    [df_16],
+    [df_256],
+  ),
+)[
+  ```python
+  for a in dfs:
+    embedding = PaCMAP(
+      n_neighbors=min(10, a - 1),
+      random_state=random_states[0],
+    ).fit_transform(pcas[a].transform(dfs[a]))
+
+    fig, ax = plt.subplots()
+    ax.scatter(embedding[:, 0], embedding[:, 1])
+    plt.show()
+  ```
+]
+
+= Visualization of df_a datasets with PaCMAP after PCA pre-rotation
+
+#calepin.chunk(
+  results: "auto",
+  label: "fig-prerot-tsne-df-a-1",
+  fig-caption: [df_a datasets PCA + tSNE visualization],
+  fig-layout-columns: (1fr, 1fr),
+  fig-subcaptions: (
+    [df_4],
+    [df_16],
+    [df_256],
+  ),
+)[
+  ```python
+  for a in dfs:
+    embedding = TSNE(
+      perplexity=min(30, a - 1),
+      random_state=random_states[0],
+      learning_rate='auto'
+    ).fit_transform(pcas[a].transform(dfs[a]))
+
+    fig, ax = plt.subplots()
+    ax.scatter(embedding[:, 0], embedding[:, 1])
+    plt.show()
+  ```
+]
