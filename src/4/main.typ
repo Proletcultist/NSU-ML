@@ -32,6 +32,7 @@
   from itertools import combinations
 
   low_components_to_show = [0, 1, 2, 3]
+  high_components_to_show = [129, 130, 131, 132]
 
   dfs = {}
   for a in [4, 16, 256]:
@@ -71,8 +72,8 @@
 
 #calepin.chunk(
   results: "auto",
-  label: "fig-df-4-scree",
-  fig-caption: [df_4 scree],
+  label: "fig-scree",
+  fig-caption: [Scree plots],
   fig-layout-columns: (1fr, 1fr),
   fig-subcaptions: (
     [df_4],
@@ -86,6 +87,14 @@
   for a in dfs:
     dfs_scaled[a] = StandardScaler().fit_transform(dfs[a])
     pcas[a] = PCA().fit(dfs_scaled[a])
+
+  for a in dfs:
+    fig, ax = plt.subplots()
+    ax.plot(range(1, len(pcas[a].explained_variance_ratio_) + 1), pcas[a].explained_variance_ratio_, marker='o', markersize=3)
+    plt.xlabel("Component num")
+    plt.ylabel("Share of explained variance")
+    ax.grid(True)
+    plt.show()
   ```
 ]
 
@@ -203,5 +212,29 @@
 )[
   ```python
   plot_pc_pairs(scores, loadings, low_components_to_show, show_vectors=True)
+  ```
+]
+
+= Plotting 4 components for df_256 that explain the least amount of variance
+
+#calepin.chunk(
+  results: "auto",
+  label: "fig-df-256-not-explanatory-comps",
+  fig-caption: [df_256 pairs of components 129, 130, 131, 132],
+  fig-layout-columns: (1fr, 1fr),
+)[
+  ```python
+  plot_pc_pairs(scores, loadings, high_components_to_show, show_vectors=False)
+  ```
+]
+
+#calepin.chunk(
+  results: "auto",
+  label: "fig-df-256-not-explanatory-comps-biplot",
+  fig-caption: [df_256 pairs of components 129, 130, 131, 132 on biplot],
+  fig-layout-columns: (1fr, 1fr),
+)[
+  ```python
+  plot_pc_pairs(scores, loadings, high_components_to_show, show_vectors=True)
   ```
 ]
