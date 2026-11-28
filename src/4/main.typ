@@ -27,6 +27,8 @@
   import numpy as np
   import matplotlib.pyplot as plt
   import matplotlib.patches as mpatches
+  import pandas as pd
+  from sklearn.datasets import make_blobs
   from sklearn.manifold import TSNE
   from umap import UMAP
   from pacmap import PaCMAP
@@ -37,6 +39,7 @@
   low_components_to_show = [0, 1, 2, 3]
   high_components_to_show = [129, 130, 131, 132]
   random_states = [1337, 222]
+  df_256v_variance = 7
 
   dfs = {}
   for a in [4, 16, 256]:
@@ -113,7 +116,7 @@
   fig-layout-columns: (1fr, 1fr),
 )[
   ```python
-  def plot_pc_pairs(scores, loadings, comp_indices, show_vectors=False, title=""):
+  def plot_pc_pairs(scores, loadings, comp_indices, show_vectors=False, rasterize_scatter=False, c=None):
     pairs = list(combinations(comp_indices, 2))
     n_pairs = len(pairs)
     cols = 3
@@ -122,7 +125,7 @@
     for idx, (i, j) in enumerate(pairs):
       fig, ax = plt.subplots()
 
-      ax.scatter(scores[:, i], scores[:, j])
+      ax.scatter(scores[:, i], scores[:, j], rasterized=rasterize_scatter, c=c)
       
       if show_vectors:
         xmin, xmax = ax.get_xlim()
@@ -477,5 +480,79 @@
     fig, ax = plt.subplots()
     ax.scatter(embedding[:, 0], embedding[:, 1])
     plt.show()
+  ```
+]
+
+= Visualization of 2D points cloud df_256v
+
+#calepin.chunk(
+  results: "hide",
+  label: "df-256v-assembling",
+)[
+  ```python
+  x_coords, y_coords = np.meshgrid(np.arange(256), np.arange(256), indexing='ij')
+  centers = np.column_stack([x_coords.ravel(), y_coords.ravel()])
+  cell_labels = dfs[256].ravel()
+
+  std = np.sqrt(df_256v_variance)
+  samples_per_center = np.full(len(centers), 10)
+
+  points, center_indices = make_blobs(
+      n_samples=samples_per_center,
+      centers=centers,
+      cluster_std=std,
+      random_state=random_states[0]
+  )
+
+  point_labels = cell_labels[center_indices]
+
+  df_256v = pd.DataFrame({
+      'x': points[:, 0],
+      'y': points[:, 1],
+      'label': point_labels
+  })
+
+  df_256v_scaled = StandardScaler().fit_transform(df_256v)
+  pca = PCA()
+  scores = pca.fit_transform(df_256v_scaled)
+  loadings = pca.components_
+  ```
+]
+
+#calepin.chunk(
+  results: "auto",
+  label: "fig-df-256v-scree",
+  fig-caption: [df_256v scree plot],
+  fig-layout-columns: (1fr, 1fr),
+)[
+  ```python
+  fig, ax = plt.subplots()
+  ax.plot(range(1, len(pca.explained_variance_ratio_) + 1), pca.explained_variance_ratio_, marker='o', markersize=3)
+  plt.xlabel("Component num")
+  plt.ylabel("Share of explained variance")
+  ax.grid(True)
+  plt.show()
+  ```
+]
+
+#calepin.chunk(
+  results: "auto",
+  label: "fig-df-256v-explanatory-comps",
+  fig-caption: [df_256v pairs of components 0, 1, 2, 3],
+  fig-layout-columns: (1fr, 1fr),
+)[
+  ```python
+  plot_pc_pairs(scores, loadings, [0, 1, 2], show_vectors=False, rasterize_scatter=True, c=df_256v['label'])
+  ```
+]
+
+#calepin.chunk(
+  results: "auto",
+  label: "fig-df-256v-explanatory-comps-biplot",
+  fig-caption: [df_256v pairs of components 0, 1, 3, 4 on biplot],
+  fig-layout-columns: (1fr, 1fr),
+)[
+  ```python
+  plot_pc_pairs(scores, loadings, [0, 1, 2], show_vectors=True, rasterize_scatter=True, c=df_256v['label'])
   ```
 ]
